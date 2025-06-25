@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Message History</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+  />
+  <style>
+    :root {
+      --green: #25d366;
+      --dark-green: #075e54;
+      --light-green: #dcf8c6;
+      --bg-light: #f0f2f5;
+      --text-dark: #111b21;
+      --text-muted: #667781;
+      --white: #fff;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: var(--bg-light);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 300px;
+      background-color: var(--white);
+      border-right: 1px solid #ccc;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+
+    .sidebar-header {
+      height: 60px;
+      background-color: var(--dark-green);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .menu-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .menu-item a {
+      padding: 15px 20px;
+      text-decoration: none;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .menu-item a:hover {
+      background-color: #f1f1f1;
+    }
+
+    .menu-item.active {
+      background-color: var(--light-green);
+      border-left: 4px solid var(--green);
+    }
+
+    .menu-item.active a {
+      color: var(--dark-green);
+      font-weight: bold;
+    }
+
+    .main {
+      margin-left: 300px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      height: 60px;
+      background-color: var(--dark-green);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .navbar .brand {
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .navbar .right-section {
+      display: flex;
+      align-items: center;
+    }
+
+    .navbar .right-section button {
+      margin-left: 10px;
+      background-color: var(--dark-green);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .form-box {
+      background-color: var(--white);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 0 auto;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-box h2 {
+      color: var(--text-dark);
+      margin-bottom: 10px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-box form label {
+      font-weight: 500;
+      margin-top: 10px;
+      color: var(--text-dark);
+    }
+
+    .form-box input,
+    .form-box select,
+    .form-box textarea {
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-box input:focus,
+    .form-box select:focus,
+    .form-box textarea:focus {
+      border-color: var(--green);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
+    }
+
+    .form-box button[type="submit"] {
+      margin-top: 10px;
+      background-color: var(--green);
+      color: white;
+      font-weight: bold;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: background 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .form-box button[type="submit"]:hover {
+      background-color: #1ebe5d;
+    }
+
+    .menu-item.active hr {
+      border-top: 1px solid var(--green);
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+
+    /* Toast styles */
+    #toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      display: none;
+      z-index: 9999;
+      font-weight: bold;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Read More styles */
+    .message-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 3; /* limit to 3 lines */
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: normal;
+      cursor: default;
+      user-select: text;
+    }
+
+    .message-text.expanded {
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+
+    .read-more-btn {
+      color: var(--green);
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
+      margin-top: 4px;
+      display: inline-block;
+      font-size: 0.9rem;
+    }
+
+    /* Pagination styles */
+    #pagination {
+      margin-top: 15px;
+      text-align: center;
+      user-select: none;
+    }
+
+    #pagination button {
+      background-color: var(--white);
+      border: 1px solid #ddd;
+      margin: 0 3px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--dark-green);
+      transition: background-color 0.3s ease;
+    }
+
+    #pagination button:hover:not(.active) {
+      background-color: var(--light-green);
+    }
+
+    #pagination button.active {
+      background-color: var(--green);
+      color: white;
+      cursor: default;
+    }
+
+    #pagination button:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">WhatsApp Messenger</div>
+    <div class="menu-item">
+      <a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr />
+    </div>
+    <div class="menu-item">
+      <a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr />
+    </div>
+    <div class="menu-item">
+      <a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr />
+    </div>
+    <div class="menu-item active">
+      <a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message
+        History</a
+      ><hr />
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="navbar">
+      <div class="brand">Message History</div>
+      <div class="right-section">
+        <button><i class="fas fa-user-circle"></i> Profile</button>
+        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="form-box">
+        <!-- <h2>Sent Messages History</h2> -->
+
+        <!-- Search input -->
+        <input type="text" id="searchInput" placeholder="Search messages..." />
+
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Recipients</th>
+              <th>Time</th>
+              <th>Message</th>
+              <th>Category / Source</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+
+        <div id="pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    function logout() {
+      window.location.href = "/logout";
+    }
+
+    function showToast(message, color = "#f44336") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.style.backgroundColor = color;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 3000);
+    }
+
+    let historyData = [];
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    let filteredData = [];
+
+    // Render table rows for current page
+    function renderTablePage(page) {
+      const tbody = document.querySelector("#historyTable tbody");
+      tbody.innerHTML = "";
+
+      // Calculate start and end indexes
+      const start = (page - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+
+      // Slice data for this page
+      const pageData = filteredData.slice(start, end);
+
+      pageData.forEach((entry) => {
+        const row = document.createElement("tr");
+
+        const toCell = document.createElement("td");
+        toCell.innerHTML = entry.numbers.map((num) => `<div>${num}</div>`).join("");
+
+        const timeCell = document.createElement("td");
+        const time = new Date(entry.timestamp);
+        timeCell.textContent = time.toLocaleString();
+
+        const msgCell = document.createElement("td");
+        msgCell.style.verticalAlign = "top";
+
+        // Create message container div with clamp
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("message-text");
+        msgDiv.textContent = entry.message;
+
+        msgCell.appendChild(msgDiv);
+
+        // Show Read More if message longer than ~150 chars
+        if (entry.message.length > 150) {
+          const btn = document.createElement("span");
+          btn.classList.add("read-more-btn");
+          btn.textContent = "Read More";
+
+          btn.addEventListener("click", () => {
+            if (msgDiv.classList.contains("expanded")) {
+              msgDiv.classList.remove("expanded");
+              btn.textContent = "Read More";
+            } else {
+              msgDiv.classList.add("expanded");
+              btn.textContent = "Read Less";
+            }
+          });
+
+          msgCell.appendChild(btn);
+        }
+
+        const sourceCell = document.createElement("td");
+        sourceCell.textContent = entry.categoryName || "Manual";
+
+        row.appendChild(toCell);
+        row.appendChild(timeCell);
+        row.appendChild(msgCell);
+        row.appendChild(sourceCell);
+
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render pagination buttons
+    function renderPagination() {
+      const paginationDiv = document.getElementById("pagination");
+      paginationDiv.innerHTML = "";
+
+      const pageCount = Math.ceil(filteredData.length / rowsPerPage);
+
+      // Prev button
+      const prevBtn = document.createElement("button");
+      prevBtn.textContent = "Prev";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage--;
+          updateTableAndPagination();
+        }
+      });
+      paginationDiv.appendChild(prevBtn);
+
+      // Page numbers (show max 5 at a time)
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(pageCount, startPage + 4);
+      if (endPage - startPage < 4) {
+        startPage = Math.max(1, endPage - 4);
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement("button");
+        pageBtn.textContent = i;
+        if (i === currentPage) pageBtn.classList.add("active");
+        pageBtn.addEventListener("click", () => {
+          currentPage = i;
+          updateTableAndPagination();
+        });
+        paginationDiv.appendChild(pageBtn);
+      }
+
+      // Next button
+      const nextBtn = document.createElement("button");
+      nextBtn.textContent = "Next";
+      nextBtn.disabled = currentPage === pageCount || pageCount === 0;
+      nextBtn.addEventListener("click", () => {
+        if (currentPage < pageCount) {
+          currentPage++;
+          updateTableAndPagination();
+        }
+      });
+      paginationDiv.appendChild(nextBtn);
+    }
+
+    function updateTableAndPagination() {
+      renderTablePage(currentPage);
+      renderPagination();
+    }
+
+    // Filter data based on search input
+    function filterData() {
+      const filter = document.getElementById("searchInput").value.toLowerCase();
+      filteredData = historyData.filter((entry) => {
+        // Check if any relevant field contains the filter string
+        const combinedText =
+          entry.numbers.join(" ").toLowerCase() +
+          " " +
+          new Date(entry.timestamp).toLocaleString().toLowerCase() +
+          " " +
+          entry.message.toLowerCase() +
+          " " +
+          (entry.categoryName || "manual").toLowerCase();
+        return combinedText.includes(filter);
+      });
+      currentPage = 1; // Reset page on new filter
+      updateTableAndPagination();
+    }
+
+    // Load history from API
+    async function loadHistory() {
+      try {
+        const res = await fetch("/api/history");
+        if (!res.ok) throw new Error("Failed to fetch history");
+        historyData = await res.json();
+        filteredData = [...historyData];
+        updateTableAndPagination();
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to load message history");
+      }
+    }
+
+    document.getElementById("searchInput").addEventListener("input", filterData);
+
+    // Sidebar active menu highlight
+    const currentPath = window.location.pathname.split("/").pop();
+    document.querySelectorAll(".menu-item a").forEach((link) => {
+      if (link.getAttribute("href") === currentPath) {
+        link.parentElement.classList.add("active");
+      }
+    });
+
+    loadHistory();
+  </script>
+</body>
+</html>
