@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - WhatsApp</title>
+  <link rel="icon" href="https://img.icons8.com/color/48/000000/whatsapp.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #25d366;
+      --dark-green: #075e54;
+      --light-bg: #f0f2f5;
+      --white: #ffffff;
+      --input-border: #ccc;
+      --error-color: #f44336;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--light-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background: var(--white);
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 500px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    .login-container h2 {
+      color: var(--dark-green);
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .form-control {
+      margin-bottom: 18px;
+    }
+
+    .form-control input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--input-border);
+      font-size: 14px;
+      transition: 0.3s border-color;
+    }
+
+    .form-control input:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--green);
+      border: none;
+      border-radius: 8px;
+      color: var(--white);
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s background-color;
+    }
+
+    .login-btn:hover {
+      background: #1ebe5d;
+    }
+
+    .error {
+      color: var(--error-color);
+      font-size: 14px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Welcome Back</h2>
+    <div class="error" id="error"></div>
+    <div class="form-control">
+      <input type="email" id="email" placeholder="Email" />
+    </div>
+    <div class="form-control">
+      <input type="password" id="password" placeholder="Password" />
+    </div>
+    <button class="login-btn" onclick="login()">Login</button>
+  </div>
+
+  <script>
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const error = document.getElementById('error');
+
+      error.textContent = '';
+
+      if (!email || !password) {
+        error.textContent = 'Please enter both email and password.';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          error.textContent = data.error || 'Login failed';
+          return;
+        }
+
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('token', data.token);
+        window.location.href = 'index.html';
+      } catch (err) {
+        error.textContent = 'Server error. Please try again later.';
+      }
+    }
+  </script>
+</body>
+</html>

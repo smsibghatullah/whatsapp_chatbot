@@ -10,6 +10,8 @@ const pool = require('./config/db');
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer);
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
@@ -34,6 +36,147 @@ client.initialize();
 
 // --- API Endpoints ---
 app.use('/images', express.static(__dirname + '/images'));
+
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    const user = result.rows[0];
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid email or password' });
+    }
+
+    // Optional: Create a JWT token
+    const token = jwt.sign(
+      { id: user.id, role: user.role, name: user.name },
+      process.env.JWT_SECRET || 'secretkey',
+      { expiresIn: '1d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        email: user.email,
+        image: user.image
+      }
+    });
+
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Add user
+app.post('/api/users', async (req, res) => {
+  const { name, email, password, role } = req.body;
+
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  try {
+    const existingUser = await pool.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
+      [email]
+    );
+
+    if (existingUser.rows.length > 0) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await pool.query(
+      'INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
+      [name, email, hashedPassword, role]
+    );
+
+    res.status(201).json(result.rows[0]);
+
+  } catch (err) {
+    console.error('Error adding user:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get all users
+app.get('/api/users', async (_, res) => {
+  try {
+    const result = await pool.query('SELECT id, name, email, role FROM users ORDER BY name');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching users:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update user by id (name, email, role only; no password update here)
+app.put('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, email, role } = req.body;
+
+  if (!name || !email || !role) {
+    return res.status(400).json({ error: 'Name, email, and role are required' });
+  }
+
+  try {
+    // Check if email exists in other user
+    const emailCheck = await pool.query(
+      'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id != $2',
+      [email, id]
+    );
+    if (emailCheck.rows.length > 0) {
+      return res.status(400).json({ error: 'Email already exists for another user' });
+    }
+
+    const result = await pool.query(
+      'UPDATE users SET name = $1, email = $2, role = $3 WHERE id = $4 RETURNING id, name, email, role',
+      [name, email, role, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+    console.error('Error updating user:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Delete user by id
+app.delete('/api/users/:id', async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json({ success: true });
+
+  } catch (err) {
+    console.error('Error deleting user:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 
 // Get all categories
