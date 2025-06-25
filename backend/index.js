@@ -125,14 +125,21 @@ app.get('/api/users', async (_, res) => {
 // Update user by id (name, email, role only; no password update here)
 app.put('/api/users/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, email, role } = req.body;
+  const { name, email, password, role } = req.body;
 
-  if (!name || !email || !role) {
-    return res.status(400).json({ error: 'Name, email, and role are required' });
+  const allowedRoles = ['admin', 'user'];
+  const normalizedRole = role?.trim().toLowerCase();
+
+  if (!name || !email || !normalizedRole) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  if (!allowedRoles.includes(normalizedRole)) {
+    return res.status(400).json({ error: 'Invalid role. Allowed roles are admin or user.' });
   }
 
   try {
-    // Check if email exists in other user
+    // Check if email exists in another user
     const emailCheck = await pool.query(
       'SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND id != $2',
       [email, id]
@@ -141,10 +148,28 @@ app.put('/api/users/:id', async (req, res) => {
       return res.status(400).json({ error: 'Email already exists for another user' });
     }
 
-    const result = await pool.query(
-      'UPDATE users SET name = $1, email = $2, role = $3 WHERE id = $4 RETURNING id, name, email, role',
-      [name, email, role, id]
-    );
+    let query, values;
+
+    if (password && password.trim() !== '') {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      query = `
+        UPDATE users 
+        SET name = $1, email = $2, password = $3, role = $4 
+        WHERE id = $5 
+        RETURNING id, name, email, role
+      `;
+      values = [name, email, hashedPassword, normalizedRole, id];
+    } else {
+      query = `
+        UPDATE users 
+        SET name = $1, email = $2, role = $3 
+        WHERE id = $4 
+        RETURNING id, name, email, role
+      `;
+      values = [name, email, normalizedRole, id];
+    }
+
+    const result = await pool.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
