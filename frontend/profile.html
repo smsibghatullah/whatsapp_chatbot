@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Profile</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --green: #25d366;
+      --dark-green: #075e54;
+      --bg-light: #f0f2f5;
+      --white: #ffffff;
+      --text-dark: #111b21;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background-color: var(--bg-light);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: 300px;
+      background-color: var(--white);
+      border-right: 1px solid #ccc;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+
+    .sidebar-header {
+      height: 60px;
+      background-color: var(--dark-green);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .menu-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .menu-item a {
+      padding: 15px 20px;
+      text-decoration: none;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background-color 0.2s ease;
+    }
+
+    .menu-item a i {
+      width: 20px;
+      text-align: center;
+      color: var(--dark-green);
+    }
+
+    .menu-item a:hover {
+      background-color: #f1f1f1;
+    }
+
+    .main {
+      margin-left: 300px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      height: 60px;
+      background-color: var(--dark-green);
+      color: var(--white);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+    }
+
+    .navbar .brand {
+      font-size: 20px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .navbar .right-section {
+      display: flex;
+      align-items: center;
+    }
+
+    .navbar .right-section button {
+      margin-left: 10px;
+      background-color: var(--dark-green);
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .form-box {
+      background-color: var(--white);
+      padding: 20px;
+      border-radius: 10px;
+      margin: 0 auto;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-box h2 {
+      color: var(--text-dark);
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-box form label {
+      font-weight: 500;
+      margin-top: 10px;
+      color: var(--text-dark);
+    }
+
+    .form-box input,
+    .form-box select,
+    .form-box textarea {
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .form-box input:focus,
+    .form-box select:focus,
+    .form-box textarea:focus {
+      border-color: var(--green);
+      outline: none;
+      box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
+    }
+
+    .form-box button[type="submit"] {
+      margin-top: 10px;
+      background-color: var(--green);
+      color: white;
+      font-weight: bold;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: background 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+
+    .form-box button[type="submit"]:hover {
+      background-color: #1ebe5d;
+    }
+
+    #toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background-color: #f44336;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 6px;
+      display: none;
+      z-index: 9999;
+      font-weight: bold;
+    }
+
+    .profile-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .image-wrapper {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin-bottom: 15px;
+    }
+
+    .image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 3px solid var(--green);
+    }
+
+    #imageUpload {
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 12px;
+    }
+
+    .details p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">WhatsApp Messenger</div>
+    <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a></div>
+    <div class="menu-item"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a></div>
+    <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a></div>
+    <div class="menu-item"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a></div>
+    <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a></div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="navbar">
+      <div class="brand"><strong>Profile</strong></div>
+      <div class="right-section">
+        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="form-box">
+        <h2>User Details</h2>
+
+        <div class="profile-container">
+          <div class="image-wrapper">
+            <img id="profileImage" src="https://via.placeholder.com/150" alt="Profile" />
+            <input type="file" id="imageUpload" accept="image/*" />
+          </div>
+          <div class="details">
+            <p><strong>Name:</strong> <span id="userName">Loading...</span></p>
+            <p><strong>Email:</strong> <span id="userEmail">Loading...</span></p>
+            <p><strong>Role:</strong> <span id="userRole">Loading...</span></p>
+          </div>
+        </div>
+
+        <hr style="margin: 20px 0;" />
+
+        <h2>Change Password</h2>
+        <form id="passwordForm">
+          <label>New Password</label>
+          <input type="password" id="newPassword" required />
+
+          <label>Confirm Password</label>
+          <input type="password" id="confirmPassword" required />
+
+          <button type="submit">Change Password</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "login.html";
+    }
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.id;
+    const userRole = payload.role;
+
+    if (userRole === 'user') {
+      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+        const href = item.querySelector('a')?.getAttribute('href');
+        if (href !== 'index.html' && href !== 'profile.html') {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function showToast(message, color = "#f44336") {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.style.backgroundColor = color;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 3000);
+    }
+
+    async function loadUserInfo() {
+      try {
+        const res = await fetch(`/api/users`);
+        const users = await res.json();
+        const user = users.find(u => u.id === userId);
+        if (user) {
+          document.getElementById("userName").textContent = user.name;
+          document.getElementById("userEmail").textContent = user.email;
+          document.getElementById("userRole").textContent = user.role;
+          if (user.image_url) {
+            document.getElementById("profileImage").src = user.image_url;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        showToast("Failed to load user info");
+      }
+    }
+
+    document.getElementById("imageUpload").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          document.getElementById("profileImage").src = event.target.result;
+          // optionally send to API: event.target.result (base64)
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    document.getElementById("passwordForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const newPassword = document.getElementById("newPassword").value.trim();
+      const confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+      if (newPassword !== confirmPassword) {
+        return showToast("Passwords do not match");
+      }
+
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ password: newPassword })
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          return showToast(data.error || "Update failed");
+        }
+
+        showToast("Password updated!", "#25d366");
+        document.getElementById("newPassword").value = "";
+        document.getElementById("confirmPassword").value = "";
+      } catch (err) {
+        console.error(err);
+        showToast("Server error");
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "login.html";
+    }
+
+    loadUserInfo();
+  </script>
+</body>
+</html>

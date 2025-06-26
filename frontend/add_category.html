@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WhatsApp</title>
+  <title>Add Category</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-  <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/000000/whatsapp.png" />
   <style>
     :root {
       --green: #25d366;
@@ -36,7 +36,9 @@
       background-color: var(--white);
       border-right: 1px solid #ccc;
       position: fixed;
-      top: 0; bottom: 0; left: 0;
+      top: 0;
+      bottom: 0;
+      left: 0;
       display: flex;
       flex-direction: column;
       z-index: 2;
@@ -134,6 +136,7 @@
       padding: 20px;
       overflow-y: auto;
     }
+
     .form-box {
       background-color: var(--white);
       padding: 20px;
@@ -141,20 +144,24 @@
       margin: 0 auto;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     }
+
     .form-box h2 {
       color: var(--text-dark);
       margin-bottom: 10px;
     }
+
     form {
       display: flex;
       flex-direction: column;
       gap: 20px;
     }
+
     .form-box form label {
       font-weight: 500;
       margin-top: 10px;
       color: var(--text-dark);
     }
+
     .form-box input,
     .form-box select,
     .form-box textarea {
@@ -164,6 +171,7 @@
       font-size: 14px;
       transition: border 0.2s ease, box-shadow 0.2s ease;
     }
+
     .form-box input:focus,
     .form-box select:focus,
     .form-box textarea:focus {
@@ -171,6 +179,7 @@
       outline: none;
       box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
     }
+
     .form-box button[type="submit"] {
       margin-top: 10px;
       background-color: var(--green);
@@ -183,6 +192,7 @@
       border: none;
       cursor: pointer;
     }
+
     .form-box button[type="submit"]:hover {
       background-color: #1ebe5d;
     }
@@ -193,7 +203,8 @@
       border-collapse: collapse;
     }
 
-    th, td {
+    th,
+    td {
       padding: 10px;
       border: 1px solid #ddd;
       text-align: left;
@@ -215,9 +226,11 @@
       display: none;
       position: fixed;
       z-index: 9999;
-      left: 0; top: 0;
-      width: 100%; height: 100%;
-      background-color: rgba(0,0,0,0.5);
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
       justify-content: center;
       align-items: center;
       font-family: 'Segoe UI', sans-serif;
@@ -230,7 +243,7 @@
       width: 90%;
       max-width: 420px;
       text-align: left;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     }
 
     .modal-content h3 {
@@ -256,7 +269,7 @@
       border: 1.8px solid #ccc;
       font-size: 1rem;
       transition: border-color 0.3s ease, box-shadow 0.3s ease;
-      box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
     }
 
     .modal-content input[type="text"]:focus {
@@ -281,15 +294,17 @@
       border: none;
       cursor: pointer;
       transition: background-color 0.25s ease;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .save-btn, .yes-btn {
+    .save-btn,
+    .yes-btn {
       background-color: var(--green);
       color: var(--white);
     }
 
-    .save-btn:hover, .yes-btn:hover {
+    .save-btn:hover,
+    .yes-btn:hover {
       background-color: #1ebe5d;
     }
 
@@ -304,7 +319,7 @@
 
     #toast {
       position: fixed;
-      top: 20px;            
+      top: 20px;
       right: 20px;
       background-color: #f44336;
       color: white;
@@ -313,22 +328,63 @@
       display: none;
       z-index: 99999;
       font-weight: bold;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       font-family: 'Segoe UI', sans-serif;
     }
-    
+
+    #pagination {
+      margin-top: 15px;
+      text-align: center;
+      user-select: none;
+    }
+
+    #pagination button {
+      background-color: var(--white);
+      border: 1px solid #ddd;
+      margin: 0 3px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--dark-green);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    #pagination button:hover:not(.active):not(:disabled) {
+      background-color: var(--light-green);
+    }
+
+    #pagination button.active {
+      background-color: var(--green);
+      color: white;
+      cursor: default;
+    }
+
+    #pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
+
 <body>
 
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">WhatsApp Messenger</div>
-    <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr/></div>
-    <div class="menu-item active"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr/></div>
-    <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr/></div>
+    <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a>
+      <hr />
+    </div>
+    <div class="menu-item active"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a>
+      <hr />
+    </div>
+    <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a>
+      <hr />
+    </div>
     <div class="menu-item "><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr/></div>
-    <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a><hr/></div>
+    <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a>
+      <hr />
+    </div>
   </div>
 
   <!-- Main -->
@@ -347,12 +403,21 @@
           <input type="text" id="categoryName" placeholder="Category Name" required />
           <button type="submit">Add Category</button>
         </form>
-        <br/>
-        <input type="text" id="searchInput" placeholder="Search Categories..." >
+        <br />
+        <input type="text" id="searchInput" placeholder="Search Categories...">
         <table>
-          <thead><tr><th>Name  <i id="sortIcon" class="fa-solid fa-sort" style="cursor:pointer;" onclick="toggleSort()"></i></th><th>Actions</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Name <i id="sortIcon" class="fa-solid fa-sort" style="cursor:pointer;" onclick="toggleSort()"></i>
+              </th>
+              <th>Actions</th>
+            </tr>
+          </thead>
           <tbody id="categoriesTable"></tbody>
         </table>
+
+        <!-- ✅ Pagination after the table -->
+        <div id="pagination"></div>
       </div>
     </div>
   </div>
@@ -374,7 +439,7 @@
   <div class="modal" id="deleteModal">
     <div class="modal-content">
       <h3>Are you sure to delete?</h3>
-      <br/>
+      <br />
       <div class="modal-buttons">
         <button class="yes-btn" onclick="confirmDelete()">Yes</button>
         <button class="cancel-btn" onclick="closeModal('deleteModal')">Cancel</button>
@@ -387,8 +452,39 @@
 
   <script>
     let sortDirection = 'asc';
+    let categories = [], currentEditId = null, currentDeleteId = null;
+    let currentPage = 1;
+    const rowsPerPage = 10;
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userRole = payload.role;
+
+    if (userRole !== 'admin') {
+      window.location.href = 'index.html';
+    }
+
+    if (userRole === 'user') {
+        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+          const href = item.querySelector('a')?.getAttribute('href');
+          if (
+            href !== 'index.html' 
+          ) {
+            item.style.display = 'none';
+          }
+        });
+      }
+
     function logout() {
-      window.location.href = '/logout';
+      showToast("Logging out...", "#25d366");
+      localStorage.removeItem('token');
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 1500);
     }
 
     function showToast(message, color = '#f44336') {
@@ -399,8 +495,6 @@
       setTimeout(() => { toast.style.display = 'none'; }, 3000);
     }
 
-    let categories = [], currentEditId = null, currentDeleteId = null;
-
     async function fetchCategories() {
       const res = await fetch('/api/categories');
       categories = await res.json();
@@ -408,40 +502,88 @@
     }
 
     function displayCategories() {
-  const tbody = document.getElementById('categoriesTable');
-  const filter = document.getElementById('searchInput').value.toLowerCase();
-  tbody.innerHTML = '';
+      const tbody = document.getElementById('categoriesTable');
+      const filter = document.getElementById('searchInput').value.toLowerCase();
+      tbody.innerHTML = '';
 
-  let filtered = categories.filter(c => c.name.toLowerCase().includes(filter));
+      let filtered = categories.filter(c => c.name.toLowerCase().includes(filter));
 
-  // Sort by name
-  filtered.sort((a, b) => {
-    const nameA = a.name.toLowerCase();
-    const nameB = b.name.toLowerCase();
-    if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
-    if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+      // Sort
+      filtered.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (nameA < nameB) return sortDirection === 'asc' ? -1 : 1;
+        if (nameA > nameB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
 
-  filtered.forEach(cat => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${cat.name}</td>
-      <td class="action-btns">
-        <i class="fas fa-edit" onclick="openEdit(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')"></i>
-        <i class="fas fa-trash" onclick="openDelete(${cat.id})"></i>
-      </td>`;
-    tbody.appendChild(row);
-  });
-}
+      // Pagination
+      const totalPages = Math.ceil(filtered.length / rowsPerPage);
+      currentPage = Math.min(currentPage, totalPages || 1);
+      const start = (currentPage - 1) * rowsPerPage;
+      const paginated = filtered.slice(start, start + rowsPerPage);
 
-function toggleSort() {
-  sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-  const icon = document.getElementById('sortIcon');
-  icon.className = sortDirection === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
-  displayCategories();
-}
+      paginated.forEach(cat => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+        <td>${cat.name}</td>
+        <td class="action-btns">
+          <i class="fas fa-edit" onclick="openEdit(${cat.id}, '${cat.name.replace(/'/g, "\\'")}')"></i>
+          <i class="fas fa-trash" onclick="openDelete(${cat.id})"></i>
+        </td>`;
+        tbody.appendChild(row);
+      });
 
+      updatePaginationControls(totalPages);
+    }
+
+    function updatePaginationControls(totalPages) {
+      const container = document.getElementById('pagination');
+      container.innerHTML = '';
+
+      // Prev
+      const prev = document.createElement('button');
+      prev.textContent = 'Prev';
+      prev.disabled = currentPage === 1;
+      prev.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          displayCategories();
+        }
+      };
+      container.appendChild(prev);
+
+      // Pages
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement('button');
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add('active');
+        btn.onclick = () => {
+          currentPage = i;
+          displayCategories();
+        };
+        container.appendChild(btn);
+      }
+
+      // Next
+      const next = document.createElement('button');
+      next.textContent = 'Next';
+      next.disabled = currentPage === totalPages || totalPages === 0;
+      next.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          displayCategories();
+        }
+      };
+      container.appendChild(next);
+    }
+
+    function toggleSort() {
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+      const icon = document.getElementById('sortIcon');
+      icon.className = sortDirection === 'asc' ? 'fa-solid fa-sort-up' : 'fa-solid fa-sort-down';
+      displayCategories();
+    }
 
     document.getElementById('categoryForm').addEventListener('submit', async e => {
       e.preventDefault();
@@ -466,7 +608,10 @@ function toggleSort() {
       }
     });
 
-    document.getElementById('searchInput').addEventListener('input', displayCategories);
+    document.getElementById('searchInput').addEventListener('input', () => {
+      currentPage = 1;
+      displayCategories();
+    });
 
     function openEdit(id, name) {
       currentEditId = id;
@@ -483,17 +628,17 @@ function toggleSort() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name })
       })
-      .then(async res => {
-        const data = await res.json();
-        if (!res.ok) return showToast(data.error || "Update failed");
-        closeModal('editModal');
-        fetchCategories();
-        showToast("Category updated", "#4caf50");
-      })
-      .catch(err => {
-        console.error(err);
-        showToast("Failed to update category");
-      });
+        .then(async res => {
+          const data = await res.json();
+          if (!res.ok) return showToast(data.error || "Update failed");
+          closeModal('editModal');
+          fetchCategories();
+          showToast("Category updated", "#4caf50");
+        })
+        .catch(err => {
+          console.error(err);
+          showToast("Failed to update category");
+        });
     }
 
     function openDelete(id) {
@@ -503,25 +648,25 @@ function toggleSort() {
 
     function confirmDelete() {
       fetch(`/api/categories/${currentDeleteId}`, { method: 'DELETE' })
-      .then(async res => {
-        const data = await res.json();
-        closeModal('deleteModal');
-        if (!res.ok) {
-          return showToast(data.error || 'Could not delete category');
-        }
-        fetchCategories();
-        showToast("Category deleted successfully", "#4caf50");
-      })
-      .catch(() => {
-        showToast('Error occurred while deleting category');
-      });
+        .then(async res => {
+          const data = await res.json();
+          closeModal('deleteModal');
+          if (!res.ok) {
+            return showToast(data.error || 'Could not delete category');
+          }
+          fetchCategories();
+          showToast("Category deleted successfully", "#4caf50");
+        })
+        .catch(() => {
+          showToast('Error occurred while deleting category');
+        });
     }
 
     function closeModal(id) {
       document.getElementById(id).style.display = 'none';
     }
 
-    // Sidebar active menu highlight
+    // Highlight active menu
     const currentPath = window.location.pathname.split("/").pop();
     document.querySelectorAll(".menu-item a").forEach(link => {
       if (link.getAttribute("href") === currentPath) {
@@ -531,5 +676,7 @@ function toggleSort() {
 
     fetchCategories();
   </script>
+
 </body>
+
 </html>

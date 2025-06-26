@@ -282,7 +282,7 @@
     <div class="navbar">
       <div class="brand">Send Message</div>
       <div class="right-section">
-        <button><i class="fas fa-user-circle"></i> Profile</button>
+        <a href="profile.html"> <button><i class="fas fa-user-circle"></i> Profile </button></a>
         <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
       </div>
     </div>
@@ -319,10 +319,37 @@
   <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userRole = payload.role;
+
+    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+    if (userRole !== 'admin' && currentPage !== 'index.html') {
+      window.location.href = 'index.html';
+    }
+
+    if (userRole === 'user') {
+        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+          const href = item.querySelector('a')?.getAttribute('href');
+          if (
+            href !== 'index.html' 
+          ) {
+            item.style.display = 'none';
+          }
+        });
+      }
+
     function logout() {
       showToast("Logging out...", "#25d366");
+      localStorage.removeItem('token');
       setTimeout(() => {
-        window.location.href = "/logout";
+        window.location.href = "login.html";
       }, 1500);
     }
 

@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Add User</title>
+  <title>WhatsApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/000000/whatsapp.png" />
   <style>
     /* Your existing CSS here... (unchanged except pagination styles added below) */
     :root {
@@ -389,8 +390,36 @@
   <div id="toast"></div>
 
   <script>
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+    window.location.href = 'login.html';
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userRole = payload.role;
+
+    if (userRole !== 'admin') {
+      window.location.href = 'index.html';
+    }
+
+    if (userRole === 'user') {
+        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+          const href = item.querySelector('a')?.getAttribute('href');
+          if (
+            href !== 'index.html' 
+          ) {
+            item.style.display = 'none';
+          }
+        });
+      }
+
     function logout() {
-      window.location.href = '/logout';
+    showToast("Logging out...", "#25d366");
+    localStorage.removeItem('token');
+    setTimeout(() => {
+        window.location.href = "login.html";
+    }, 1500);
     }
 
     function showToast(message, color = '#f44336') {

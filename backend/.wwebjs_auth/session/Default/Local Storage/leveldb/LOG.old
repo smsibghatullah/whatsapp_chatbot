@@ -1,3 +1,5 @@
-2025/06/25-17:18:01.079 2299a0 Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
-2025/06/25-17:18:01.080 2299a0 Recovering log #22
-2025/06/25-17:18:01.081 2299a0 Reusing old log /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000022.log 
+2025/06/25-17:19:41.293 229a8c Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2025/06/25-17:19:41.294 229a8c Recovering log #22
+2025/06/25-17:19:41.294 229a8c Level-0 table #25: started
+2025/06/25-17:19:41.297 229a8c Level-0 table #25: 17732 bytes OK
+2025/06/25-17:19:41.299 229a8c Delete type=0 #22

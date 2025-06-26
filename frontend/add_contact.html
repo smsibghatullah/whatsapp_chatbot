@@ -359,6 +359,7 @@
 
 <!-- Insert this inside your <script> tag, replacing the existing one -->
   <script>
+
    let categories = [], contacts = [], deleteId = null;
 let currentSort = { column: '', direction: 'asc' };
 let currentPage = 1;
@@ -376,9 +377,37 @@ const countryPhoneRules = {
   "86": { min: 11, max: 11 },
 };
 
-function logout() {
-  window.location.href = '/logout';
-}
+const token = localStorage.getItem('token');
+
+    if (!token) {
+      window.location.href = 'login.html';
+    }
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userRole = payload.role;
+
+    if (userRole !== 'admin') {
+      window.location.href = 'index.html';
+    }
+
+    if (userRole === 'user') {
+        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+          const href = item.querySelector('a')?.getAttribute('href');
+          if (
+            href !== 'index.html' 
+          ) {
+            item.style.display = 'none';
+          }
+        });
+      }
+
+    function logout() {
+      showToast("Logging out...", "#25d366");
+      localStorage.removeItem('token');
+      setTimeout(() => {
+        window.location.href = "login.html";
+      }, 1500);
+    }
 
 function showToast(msg, color = '#25d366') {
   const toast = document.getElementById('toast');
