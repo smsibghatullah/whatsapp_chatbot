@@ -1,3 +1,2 @@
-2025/06/26-10:02:17.605 22ddac Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Session Storage/MANIFEST-000001
-2025/06/26-10:02:17.606 22ddac Recovering log #3
-2025/06/26-10:02:17.608 22ddac Reusing old log /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Session Storage/000003.log 
+2025/06/26-15:35:34.683 2d7961 Creating DB /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Session Storage since it was missing.
+2025/06/26-15:35:34.690 2d7961 Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Session Storage/MANIFEST-000001

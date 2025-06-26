@@ -242,11 +242,16 @@
 
   <div class="sidebar">
     <div class="sidebar-header">WhatsApp Messenger</div>
-    <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a></div>
-    <div class="menu-item"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a></div>
-    <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a></div>
-    <div class="menu-item"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a></div>
-    <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a></div>
+    <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr/></div>
+    <div class="menu-item"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr/></div>
+    <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr/></div>
+    <div class="menu-item"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr/></div>
+    <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a><hr/></div>
+    <div class="menu-item">
+      <a href="#" onclick="whatsapplogout()">
+        <i class="fab fa-whatsapp"></i> WhatsApp Logout
+      </a><hr/>
+    </div>
   </div>
 
   <div class="main">
@@ -263,7 +268,7 @@
 
         <div class="profile-container">
           <div class="image-wrapper" onclick="triggerImageUpload()">
-            <img id="profileImage" src="../images/avatar.png" alt="Profile" />
+            <img id="profileImage" src="images/avatar.png" alt="Profile" />
             <i class="fas fa-pen edit-icon"></i>
             <input type="file" id="imageUpload" accept="image/*" />
           </div>
@@ -301,12 +306,56 @@
   <div id="toast"></div>
 
   <script>
-    const token = localStorage.getItem("token");
-    if (!token) window.location.href = "login.html";
+    (async () => {
+          const token = localStorage.getItem('token');
+
+          if (!token) {
+            return window.location.href = 'login.html';
+          }
+
+          // Server se token validate karo
+          const verify = await fetch('/api/verify-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token })
+          });
+
+          const verifyResult = await verify.json();
+
+          if (!verify.ok || !verifyResult.valid) {
+            localStorage.clear(); // token hata do
+            return window.location.href = 'login.html';
+          }
+
+          // Token valid hai, ab payload decode karo
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userRole = payload.role;
+          const userId = payload.id;
+
+          const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+          // Role-based page restriction
+          if (userRole !== 'admin' && currentPage !== 'index.html') {
+            window.location.href = 'index.html';
+          }
+
+          // User role ka sidebar access limit
+          if (userRole === 'user') {
+            document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+              const href = item.querySelector('a')?.getAttribute('href');
+              if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+                item.style.display = 'none';
+              }
+            });
+          }
+        })();
+
+        const token = localStorage.getItem('token');
+    if (!token) window.location.href = 'login.html';
 
     const payload = JSON.parse(atob(token.split('.')[1]));
-    const userId = payload.id;
     const userRole = payload.role;
+    const userId = payload.id;
 
     if (userRole === 'user') {
       document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
@@ -316,6 +365,8 @@
         }
       });
     }
+
+    if (userRole !== 'admin') window.location.href = 'index.html';
 
     let base64Image = "";
 
@@ -422,7 +473,24 @@
     function logout() {
       localStorage.removeItem("token");
       window.location.href = "login.html";
+      
     }
+
+    function whatsapplogout() {
+      localStorage.removeItem('token');
+
+      fetch('/api/logout-whatsapp', {
+        method: 'POST',
+      })
+        .then(() => {
+          window.location.href = 'login.html';
+        })
+        .catch((err) => {
+          console.error('Logout error:', err);
+          window.location.href = 'login.html';
+        });
+    }
+
 
     loadUserInfo();
   </script>

@@ -386,6 +386,12 @@
     <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a>
       <hr />
     </div>
+    <div class="menu-item">
+      <a href="#" onclick="whatsapplogout()">
+        <i class="fab fa-whatsapp"></i> WhatsApp Logout
+      </a>
+      <hr />
+    </div>
   </div>
 
   <!-- Main -->
@@ -456,27 +462,49 @@
     let categories = [], currentEditId = null, currentDeleteId = null;
     let currentPage = 1;
     const rowsPerPage = 10;
-    const token = localStorage.getItem('token');
+    (async () => {
+            const token = localStorage.getItem('token');
 
-    if (!token) {
-      window.location.href = 'login.html';
-    }
+            if (!token) {
+              return window.location.href = 'login.html';
+            }
 
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userRole = payload.role;
+            // Server se token validate karo
+            const verify = await fetch('/api/verify-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token })
+            });
 
-    if (userRole !== 'admin') {
-      window.location.href = 'index.html';
-    }
+            const verifyResult = await verify.json();
 
-    if (userRole === 'user') {
-      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-        const href = item.querySelector('a')?.getAttribute('href');
-        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-          item.style.display = 'none';
-        }
-      });
-    }
+            if (!verify.ok || !verifyResult.valid) {
+              localStorage.clear(); // token hata do
+              return window.location.href = 'login.html';
+            }
+
+            // Token valid hai, ab payload decode karo
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const userRole = payload.role;
+            const userId = payload.id;
+
+            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+
+            // Role-based page restriction
+            if (userRole !== 'admin' && currentPage !== 'index.html') {
+              window.location.href = 'index.html';
+            }
+
+            // User role ka sidebar access limit
+            if (userRole === 'user') {
+              document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+                const href = item.querySelector('a')?.getAttribute('href');
+                if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+                  item.style.display = 'none';
+                }
+              });
+            }
+})();
     function logout() {
       showToast("Logging out...", "#25d366");
       localStorage.removeItem('token');
@@ -574,6 +602,21 @@
         }
       };
       container.appendChild(next);
+    }
+
+    function whatsapplogout() {
+      localStorage.removeItem('token');
+
+      fetch('/api/logout-whatsapp', {
+        method: 'POST',
+      })
+        .then(() => {
+          window.location.href = 'login.html';
+        })
+        .catch((err) => {
+          console.error('Logout error:', err);
+          window.location.href = 'login.html';
+        });
     }
 
     function toggleSort() {

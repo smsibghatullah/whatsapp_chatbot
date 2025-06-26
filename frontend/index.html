@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>WhatsApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
   <link rel="icon" type="image/png" href="https://img.icons8.com/color/48/000000/whatsapp.png" />
@@ -31,7 +31,6 @@
       overflow: hidden;
     }
 
-    /* Sidebar */
     .sidebar {
       width: 300px;
       background-color: var(--white);
@@ -105,7 +104,6 @@
       border-top: 1px solid var(--green);
     }
 
-    /* Main Section */
     .main {
       margin-left: 300px;
       flex: 1;
@@ -173,7 +171,7 @@
     form {
       display: flex;
       flex-direction: column;
-      gap: 30px;
+      gap: 25px;
     }
 
     .form-box form label {
@@ -222,10 +220,10 @@
       font-weight: 500;
     }
 
-    /* Toast style from your category page */
+    /* Toast */
     #toast {
       position: fixed;
-      top: 20px;            
+      top: 20px;
       right: 20px;
       background-color: #f44336;
       color: white;
@@ -234,10 +232,64 @@
       display: none;
       z-index: 9999;
       font-weight: bold;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
       user-select: none;
       white-space: nowrap;
     }
+
+    /* 🔥 Custom Form Controls */
+    input[type="checkbox"],
+    input[type="radio"] {
+      accent-color: var(--green);
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .checkbox-group,
+    .radio-group {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .form-box label {
+      display: flex;
+      align-items: center;
+      font-size: 15px;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    select {
+      appearance: none;
+      background-color: var(--white);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 140 140' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='20 40 70 90 120 40' stroke='%23667781' stroke-width='15' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      background-size: 12px 12px;
+      padding-right: 40px !important;
+      cursor: pointer;
+    }
+
+    select:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+      color: #999;
+    }
+
+    select:hover {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.1);
+    }
+
+    
+
+    #contactSelect,
+#numberInput {
+  width: 100%;
+}
 
     @media (max-width: 768px) {
       .sidebar {
@@ -253,233 +305,306 @@
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div class="sidebar" id="sidebar">
-    <div class="sidebar-header">WhatsApp Messenger</div>
+<!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-header">WhatsApp Messenger</div>
+  <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr /></div>
+  <div class="menu-item"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr /></div>
+  <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr /></div>
+  <div class="menu-item"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr /></div>
+  <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a><hr/></div>
+  <div class="menu-item">
+    <a href="#" onclick="whatsapplogout()">
+      <i class="fab fa-whatsapp"></i> WhatsApp Logout
+    </a>
+    <hr/>
+  </div>
+</div>
 
-    <div class="menu-item">
-      <a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a>
-      <hr />
-    </div>
-
-    <div class="menu-item">
-      <a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a>
-      <hr />
-    </div>
-
-    <div class="menu-item">
-      <a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a>
-      <hr />
-    </div>
-    <div class="menu-item"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr/></div>
-    <div class="menu-item">
-      <a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a>
+<!-- Main Content -->
+<div class="main">
+  <div class="navbar">
+    <div class="brand">Send Message</div>
+    <div class="right-section">
+      <a style="color: var(--dark-green);" href="profile.html">
+        <button><i class="fas fa-user-circle"></i> Profile</button>
+      </a>
+      <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div class="main">
-    <div class="navbar">
-      <div class="brand">Send Message</div>
-      <div class="right-section">
-        <a style="color: var(--dark-green);" href="profile.html"> <button><i class="fas fa-user-circle"></i> Profile </button></a>
-        <button onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-      </div>
-    </div>
-
-    <div class="content">
-      <div class="form-box">
-        <h2>Scan QR Code</h2>
-        <div id="qrcode"></div>
-
-        <form id="sendForm">
+  <div class="content">
+    <div class="form-box">
+      <h2>Scan QR Code</h2>
+      <div id="qrcode"></div>
+      <form id="sendForm">
+        <div class="checkbox-group">
           <label><input type="checkbox" id="useCategory" /> Send to Category</label>
-          <select id="categorySelect" disabled>
-            <option value="">Select Category</option>
-          </select>
+        </div>
 
-          <label for="contactSelect">Or select contact:</label>
+        <select id="categorySelect" disabled>
+          <option value="">Select Category</option>
+        </select>
+
+        <div class="radio-group" >
+          <label><input type="radio" name="sendTo" value="contact" checked /> Contact</label>
+          <label><input type="radio" name="sendTo" value="manual" /> Manual Number</label>
+        </div>
+
+        <div id="contactWrapper" >
           <select id="contactSelect">
             <option value="">-- Select Contact --</option>
           </select>
+        </div>
 
-          <input type="text" id="numberInput" placeholder="Enter Number e.g. 923451234567" />
-          <textarea id="message" placeholder="Enter your message here" rows="4"></textarea>
-          <button type="submit">Send</button>
-        </form>
+        <div id="manualWrapper" style="display: none;">
+          <input type="text" id="numberInput" placeholder="e.g. 923451234567" disabled />
+        </div>
 
-        <div id="status"></div>
-      </div>
+        <textarea id="message" placeholder="Enter your message here" rows="4"></textarea>
+        <button type="submit">Send</button>
+      </form>
+      <div id="status"></div>
     </div>
   </div>
+</div>
 
-  <!-- Toast -->
-  <div id="toast"></div>
+<div id="toast"></div>
 
   <!-- Scripts -->
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const token = localStorage.getItem('token');
+<script>
+  (async () => {
+  const token = localStorage.getItem('token');
 
-    if (!token) {
-      window.location.href = 'login.html';
-    }
+  if (!token) {
+    return window.location.href = 'login.html';
+  }
 
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userRole = payload.role;
+  // Server se token validate karo
+  const verify = await fetch('/api/verify-token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  });
 
-    const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+  const verifyResult = await verify.json();
 
-    if (userRole !== 'admin' && currentPage !== 'index.html') {
-      window.location.href = 'index.html';
-    }
+  if (!verify.ok || !verifyResult.valid) {
+    localStorage.clear(); // token hata do
+    return window.location.href = 'login.html';
+  }
 
-    if (userRole === 'user') {
-      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-        const href = item.querySelector('a')?.getAttribute('href');
-        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-          item.style.display = 'none';
-        }
-      });
-    }
+  // Token valid hai, ab payload decode karo
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  const userRole = payload.role;
+  const userId = payload.id;
 
-    function logout() {
-      showToast("Logging out...", "#25d366");
-      localStorage.removeItem('token');
-      setTimeout(() => {
-        window.location.href = "login.html";
-      }, 1500);
-    }
+  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
 
-    const socket = io();
-    socket.on('qr', qr => {
-      document.getElementById('qrcode').innerHTML = `<img src="${qr}" width="280">`;
+  // Role-based page restriction
+  if (userRole !== 'admin' && currentPage !== 'index.html') {
+    window.location.href = 'index.html';
+  }
+
+  // User role ka sidebar access limit
+  if (userRole === 'user') {
+    document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+      const href = item.querySelector('a')?.getAttribute('href');
+      if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+        item.style.display = 'none';
+      }
     });
+  }
+})();
 
-    socket.on('ready', () => {
-      document.getElementById('qrcode').innerHTML = '<p style="color:green;">WhatsApp Connected</p>';
-    });
 
-    const useCategory = document.getElementById('useCategory');
-    const categorySelect = document.getElementById('categorySelect');
-    const numberInput = document.getElementById('numberInput');
-    const contactSelect = document.getElementById('contactSelect');
-    const statusDiv = document.getElementById('status');
-    const userId = payload.id;
+  function logout() {
+    showToast("Logging out...", "#25d366");
+    localStorage.removeItem('token');
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1500);
+  }
 
-    useCategory.addEventListener('change', () => {
-      categorySelect.disabled = !useCategory.checked;
-      numberInput.disabled = useCategory.checked;
-      contactSelect.disabled = useCategory.checked;
-      if (useCategory.checked) {
+  const socket = io();
+  socket.on('qr', qr => {
+    document.getElementById('qrcode').innerHTML = `<img src="${qr}" width="280">`;
+  });
+
+  socket.on('ready', () => {
+    document.getElementById('qrcode').innerHTML = '<p style="color:green;">WhatsApp Connected</p>';
+  });
+
+  const useCategory = document.getElementById('useCategory');
+  const categorySelect = document.getElementById('categorySelect');
+  const numberInput = document.getElementById('numberInput');
+  const contactSelect = document.getElementById('contactSelect');
+  const statusDiv = document.getElementById('status');
+
+  const contactWrapper = document.getElementById("contactWrapper");
+  const manualWrapper = document.getElementById("manualWrapper");
+  const sendToRadios = document.querySelectorAll("input[name='sendTo']");
+
+  // Toggle Category vs Contact/Manual
+  useCategory.addEventListener('change', () => {
+    categorySelect.disabled = !useCategory.checked;
+    const isCategory = useCategory.checked;
+
+    // Disable both when category is selected
+    numberInput.disabled = isCategory;
+    contactSelect.disabled = isCategory;
+    sendToRadios.forEach(radio => radio.disabled = isCategory);
+
+    // Reset inputs
+    numberInput.value = '';
+    contactSelect.value = '';
+    categorySelect.value = '';
+  });
+
+  // Toggle Contact vs Manual
+  sendToRadios.forEach(radio => {
+    radio.addEventListener("change", () => {
+      if (radio.value === "contact") {
+        contactWrapper.style.display = "block";
+        manualWrapper.style.display = "none";
+        contactSelect.disabled = false;
+        numberInput.disabled = true;
         numberInput.value = '';
-        contactSelect.value = '';
       } else {
-        categorySelect.value = '';
+        contactWrapper.style.display = "none";
+        manualWrapper.style.display = "block";
+        contactSelect.disabled = true;
+        numberInput.disabled = false;
+        contactSelect.value = '';
       }
     });
+  });
 
-    async function loadCategories() {
-      try {
-        const res = await fetch('/api/categories');
-        if (!res.ok) throw new Error("Failed to fetch categories");
-        const data = await res.json();
-        categorySelect.innerHTML = '<option value="">Select Category</option>';
-        data.forEach(cat => {
-          const opt = document.createElement('option');
-          opt.value = cat.id;
-          opt.textContent = cat.name;
-          categorySelect.appendChild(opt);
-        });
-      } catch (err) {
-        showToast("Failed to load categories");
-      }
+  async function loadCategories() {
+    try {
+      const res = await fetch('/api/categories');
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      const data = await res.json();
+      categorySelect.innerHTML = '<option value="">Select Category</option>';
+      data.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        categorySelect.appendChild(opt);
+      });
+    } catch (err) {
+      showToast("Failed to load categories");
     }
+  }
 
-    async function loadContacts() {
-      try {
-        const res = await fetch('/api/contacts');
-        if (!res.ok) throw new Error("Failed to fetch contacts");
-        const data = await res.json();
-        contactSelect.innerHTML = '<option value="">-- Select Contact --</option>';
-        data.forEach(contact => {
-          const opt = document.createElement('option');
-          opt.value = contact.number;
-          opt.textContent = `${contact.name} - ${contact.number}`;
-          contactSelect.appendChild(opt);
-        });
-      } catch (err) {
-        showToast("Failed to load contacts");
-      }
+  async function loadContacts() {
+    try {
+      const res = await fetch('/api/contacts');
+      if (!res.ok) throw new Error("Failed to fetch contacts");
+      const data = await res.json();
+      contactSelect.innerHTML = '<option value="">-- Select Contact --</option>';
+      data.forEach(contact => {
+        const opt = document.createElement('option');
+        opt.value = contact.number;
+        opt.textContent = `${contact.name} - ${contact.number}`;
+        contactSelect.appendChild(opt);
+      });
+    } catch (err) {
+      showToast("Failed to load contacts");
     }
+  }
 
-    document.getElementById('sendForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      statusDiv.textContent = '';
-      const message = document.getElementById('message').value.trim();
-      if (!message) return showToast('Please enter a message');
+  document.getElementById('sendForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    statusDiv.textContent = '';
+    const message = document.getElementById('message').value.trim();
+    if (!message) return showToast('Please enter a message');
 
-      let numbers = [], category = null;
-      if (useCategory.checked) {
-        category = categorySelect.value;
-        if (!category) return showToast('Select a category');
-      } else {
+    let numbers = [], category = null;
+
+    if (useCategory.checked) {
+      category = categorySelect.value;
+      if (!category) return showToast('Select a category');
+    } else {
+      const selectedMode = document.querySelector('input[name="sendTo"]:checked').value;
+      if (selectedMode === 'contact') {
         const selectedContact = contactSelect.value;
+        if (!selectedContact) return showToast('Please select a contact');
+        numbers = [selectedContact];
+      } else {
         const manual = numberInput.value.trim();
-        if (selectedContact) numbers = [selectedContact];
-        else if (manual) numbers = [manual];
-        else return showToast('Select a contact or enter a number');
+        if (!manual) return showToast('Please enter a number');
+        numbers = [manual];
       }
+    }
 
-      statusDiv.textContent = 'Sending...';
-      try {
-        const res = await fetch('/api/send', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ numbers, message, category ,userId})
-        });
+    statusDiv.textContent = 'Sending...';
+    try {
+      const res = await fetch('/api/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ numbers, message, category, userId })
+      });
 
-        if (res.ok) {
-          statusDiv.textContent = '';
-          showToast('Message sent successfully!', '#4caf50');
-          document.getElementById('sendForm').reset();
-          categorySelect.disabled = true;
-          numberInput.disabled = false;
-          contactSelect.disabled = false;
-        } else {
-          const data = await res.json();
-          showToast(data.error || 'Failed to send message');
-          statusDiv.textContent = '';
-        }
-      } catch {
-        showToast('Failed to send message');
+      if (res.ok) {
+        statusDiv.textContent = '';
+        showToast('Message sent successfully!', '#4caf50');
+        document.getElementById('sendForm').reset();
+        categorySelect.disabled = true;
+        numberInput.disabled = false;
+        contactSelect.disabled = false;
+        contactWrapper.style.display = "block";
+        manualWrapper.style.display = "none";
+      } else {
+        const data = await res.json();
+        showToast(data.error || 'Failed to send message');
         statusDiv.textContent = '';
       }
-    });
+    } catch {
+      showToast('Failed to send message');
+      statusDiv.textContent = '';
+    }
+  });
 
-    // Toast function copied from category page style
-    function showToast(message, color = '#f44336') {
-      const toast = document.getElementById('toast');
-      toast.textContent = message;
-      toast.style.backgroundColor = color;
-      toast.style.display = 'block';
-      clearTimeout(toast.timeout);
-      toast.timeout = setTimeout(() => {
-        toast.style.display = 'none';
-      }, 3000);
+  function showToast(message, color = '#f44336') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.style.backgroundColor = color;
+    toast.style.display = 'block';
+    clearTimeout(toast.timeout);
+    toast.timeout = setTimeout(() => {
+      toast.style.display = 'none';
+    }, 3000);
+  }
+
+  function whatsapplogout() {
+      localStorage.removeItem('token');
+
+      fetch('/api/logout-whatsapp', {
+        method: 'POST',
+      })
+        .then(() => {
+          window.location.href = 'login.html';
+        })
+        .catch((err) => {
+          console.error('Logout error:', err);
+          window.location.href = 'login.html';
+        });
     }
 
-    loadCategories();
-    loadContacts();
+  loadCategories();
+  loadContacts();
 
-    // Highlight active sidebar menu including <hr>
-    const currentPath = window.location.pathname.split("/").pop();
-    document.querySelectorAll(".menu-item").forEach(item => {
-      const link = item.querySelector("a");
-      if (link && link.getAttribute("href") === currentPath) {
-        item.classList.add("active");
-      }
-    });
-  </script>
+  // Highlight active sidebar
+  const currentPath = window.location.pathname.split("/").pop();
+  document.querySelectorAll(".menu-item").forEach(item => {
+    const link = item.querySelector("a");
+    if (link && link.getAttribute("href") === currentPath) {
+      item.classList.add("active");
+    }
+  });
+</script>
+
 </body>
 </html>
