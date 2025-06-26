@@ -334,6 +334,7 @@
               <th>Time</th>
               <th>Message</th>
               <th>Category / Source</th>
+              <th>Sent By</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -349,163 +350,128 @@
 
   <script>
     const token = localStorage.getItem('token');
-
-    if (!token) {
-      window.location.href = 'login.html';
-    }
+    if (!token) window.location.href = 'login.html';
 
     const payload = JSON.parse(atob(token.split('.')[1]));
     const userRole = payload.role;
-
-    if (userRole !== 'admin') {
-      window.location.href = 'index.html';
-    }
+    const userId = payload.id;
 
     if (userRole === 'user') {
-        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-          const href = item.querySelector('a')?.getAttribute('href');
-          if (
-            href !== 'index.html' 
-          ) {
-            item.style.display = 'none';
-          }
-        });
-      }
-
-    function logout() {
-      showToast("Logging out...", "#25d366");
-      localStorage.removeItem('token');
-      setTimeout(() => {
-        window.location.href = "login.html";
-      }, 1500);
+      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+        const href = item.querySelector('a')?.getAttribute('href');
+        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+          item.style.display = 'none';
+        }
+      });
     }
 
-    function showToast(message, color = "#f44336") {
-      const toast = document.getElementById("toast");
-      toast.textContent = message;
-      toast.style.backgroundColor = color;
-      toast.style.display = "block";
-      setTimeout(() => {
-        toast.style.display = "none";
-      }, 3000);
-    }
 
     let historyData = [];
+    let filteredData = [];
     let currentPage = 1;
     const rowsPerPage = 10;
-    let filteredData = [];
 
-    // Render table rows for current page
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 3000);
+    }
+
+    function logout() {
+      localStorage.removeItem('token');
+      showToast("Logging out...");
+      setTimeout(() => window.location.href = 'login.html', 1500);
+    }
+
     function renderTablePage(page) {
       const tbody = document.querySelector("#historyTable tbody");
       tbody.innerHTML = "";
 
-      // Calculate start and end indexes
       const start = (page - 1) * rowsPerPage;
       const end = start + rowsPerPage;
-
-      // Slice data for this page
       const pageData = filteredData.slice(start, end);
 
-      pageData.forEach((entry) => {
+      pageData.forEach(entry => {
         const row = document.createElement("tr");
 
         const toCell = document.createElement("td");
-        toCell.innerHTML = entry.numbers.map((num) => `<div>${num}</div>`).join("");
+        toCell.innerHTML = entry.numbers.map(num => `<div>${num}</div>`).join("");
 
         const timeCell = document.createElement("td");
         const time = new Date(entry.timestamp);
         timeCell.textContent = time.toLocaleString();
 
         const msgCell = document.createElement("td");
-        msgCell.style.verticalAlign = "top";
-
-        // Create message container div with clamp
         const msgDiv = document.createElement("div");
         msgDiv.classList.add("message-text");
         msgDiv.textContent = entry.message;
-
         msgCell.appendChild(msgDiv);
 
-        // Show Read More if message longer than ~150 chars
         if (entry.message.length > 150) {
           const btn = document.createElement("span");
           btn.classList.add("read-more-btn");
           btn.textContent = "Read More";
-
           btn.addEventListener("click", () => {
-            if (msgDiv.classList.contains("expanded")) {
-              msgDiv.classList.remove("expanded");
-              btn.textContent = "Read More";
-            } else {
-              msgDiv.classList.add("expanded");
-              btn.textContent = "Read Less";
-            }
+            msgDiv.classList.toggle("expanded");
+            btn.textContent = msgDiv.classList.contains("expanded") ? "Read Less" : "Read More";
           });
-
           msgCell.appendChild(btn);
         }
 
-        const sourceCell = document.createElement("td");
-        sourceCell.textContent = entry.categoryName || "Manual";
+        const categoryCell = document.createElement("td");
+        categoryCell.textContent = entry.categoryName || "Manual";
+
+        const userCell = document.createElement("td");
+        userCell.textContent = entry.user?.name || "Unknown"; // ✅
 
         row.appendChild(toCell);
         row.appendChild(timeCell);
         row.appendChild(msgCell);
-        row.appendChild(sourceCell);
+        row.appendChild(categoryCell);
+        row.appendChild(userCell); // ✅
 
         tbody.appendChild(row);
       });
     }
 
-    // Render pagination buttons
     function renderPagination() {
-      const paginationDiv = document.getElementById("pagination");
-      paginationDiv.innerHTML = "";
-
+      const container = document.getElementById("pagination");
+      container.innerHTML = "";
       const pageCount = Math.ceil(filteredData.length / rowsPerPage);
 
-      // Prev button
-      const prevBtn = document.createElement("button");
-      prevBtn.textContent = "Prev";
-      prevBtn.disabled = currentPage === 1;
-      prevBtn.addEventListener("click", () => {
+      const prev = document.createElement("button");
+      prev.textContent = "Prev";
+      prev.disabled = currentPage === 1;
+      prev.onclick = () => {
         if (currentPage > 1) {
           currentPage--;
           updateTableAndPagination();
         }
-      });
-      paginationDiv.appendChild(prevBtn);
+      };
+      container.appendChild(prev);
 
-      // Page numbers (show max 5 at a time)
-      let startPage = Math.max(1, currentPage - 2);
-      let endPage = Math.min(pageCount, startPage + 4);
-      if (endPage - startPage < 4) {
-        startPage = Math.max(1, endPage - 4);
-      }
-
-      for (let i = startPage; i <= endPage; i++) {
-        const pageBtn = document.createElement("button");
-        pageBtn.textContent = i;
-        if (i === currentPage) pageBtn.classList.add("active");
-        pageBtn.addEventListener("click", () => {
+      for (let i = 1; i <= pageCount; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        if (i === currentPage) btn.classList.add("active");
+        btn.onclick = () => {
           currentPage = i;
           updateTableAndPagination();
-        });
-        paginationDiv.appendChild(pageBtn);
+        };
+        container.appendChild(btn);
       }
 
-      // Next button
-      const nextBtn = document.createElement("button");
-      nextBtn.textContent = "Next";
-      nextBtn.disabled = currentPage === pageCount || pageCount === 0;
-      nextBtn.addEventListener("click", () => {
+      const next = document.createElement("button");
+      next.textContent = "Next";
+      next.disabled = currentPage === pageCount;
+      next.onclick = () => {
         if (currentPage < pageCount) {
           currentPage++;
           updateTableAndPagination();
         }
-      });
-      paginationDiv.appendChild(nextBtn);
+      };
+      container.appendChild(next);
     }
 
     function updateTableAndPagination() {
@@ -513,49 +479,43 @@
       renderPagination();
     }
 
-    // Filter data based on search input
     function filterData() {
       const filter = document.getElementById("searchInput").value.toLowerCase();
-      filteredData = historyData.filter((entry) => {
-        // Check if any relevant field contains the filter string
-        const combinedText =
-          entry.numbers.join(" ").toLowerCase() +
-          " " +
-          new Date(entry.timestamp).toLocaleString().toLowerCase() +
-          " " +
-          entry.message.toLowerCase() +
-          " " +
-          (entry.categoryName || "manual").toLowerCase();
-        return combinedText.includes(filter);
+      filteredData = historyData.filter(entry => {
+        const searchStr = (
+          entry.numbers.join(" ") +
+          " " + new Date(entry.timestamp).toLocaleString() +
+          " " + entry.message +
+          " " + (entry.categoryName || "manual") +
+          " " + (entry.user?.name || "")
+        ).toLowerCase();
+        return searchStr.includes(filter);
       });
-      currentPage = 1; // Reset page on new filter
+      currentPage = 1;
       updateTableAndPagination();
     }
 
-    // Load history from API
     async function loadHistory() {
-      try {
-        const res = await fetch("/api/history");
-        if (!res.ok) throw new Error("Failed to fetch history");
-        historyData = await res.json();
-        filteredData = [...historyData];
-        updateTableAndPagination();
-      } catch (err) {
-        console.error(err);
-        showToast("Failed to load message history");
+        try {
+          const res = await fetch("/api/history");
+          const data = await res.json();
+
+          if (userRole === "admin") {
+            historyData = data;
+          } else {
+            historyData = data.filter(entry => entry.user?.id === userId);
+          }
+
+          filteredData = [...historyData];
+          updateTableAndPagination();
+        } catch (err) {
+          console.error("Error loading history", err);
+          showToast("Failed to load history");
+        }
       }
-    }
+
 
     document.getElementById("searchInput").addEventListener("input", filterData);
-
-    // Sidebar active menu highlight
-    const currentPath = window.location.pathname.split("/").pop();
-    document.querySelectorAll(".menu-item a").forEach((link) => {
-      if (link.getAttribute("href") === currentPath) {
-        link.parentElement.classList.add("active");
-      }
-    });
-
     loadHistory();
   </script>
 </body>

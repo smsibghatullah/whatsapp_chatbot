@@ -335,15 +335,13 @@
     }
 
     if (userRole === 'user') {
-        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-          const href = item.querySelector('a')?.getAttribute('href');
-          if (
-            href !== 'index.html' 
-          ) {
-            item.style.display = 'none';
-          }
-        });
-      }
+      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+        const href = item.querySelector('a')?.getAttribute('href');
+        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+          item.style.display = 'none';
+        }
+      });
+    }
 
     function logout() {
       showToast("Logging out...", "#25d366");
@@ -359,7 +357,7 @@
     });
 
     socket.on('ready', () => {
-      document.getElementById('qrcode').innerHTML = '<p style="color:green;">✅ WhatsApp Connected</p>';
+      document.getElementById('qrcode').innerHTML = '<p style="color:green;">WhatsApp Connected</p>';
     });
 
     const useCategory = document.getElementById('useCategory');
@@ -367,6 +365,7 @@
     const numberInput = document.getElementById('numberInput');
     const contactSelect = document.getElementById('contactSelect');
     const statusDiv = document.getElementById('status');
+    const userId = payload.id;
 
     useCategory.addEventListener('change', () => {
       categorySelect.disabled = !useCategory.checked;
@@ -437,7 +436,7 @@
         const res = await fetch('/api/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ numbers, message, category })
+          body: JSON.stringify({ numbers, message, category ,userId})
         });
 
         if (res.ok) {

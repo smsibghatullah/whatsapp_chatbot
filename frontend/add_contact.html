@@ -300,7 +300,7 @@
         <form id="contactForm">
           <input type="text" id="contactName" placeholder="Contact Name" required />
           <input type="text" id="contactNumber" placeholder="Number e.g. 923451234567" required />
-          <select id="contactCategory" multiple required></select>
+          <select id="contactCategory" multiple ></select>
           <button type="submit">Add Contact</button>
         </form>
         <br/>
@@ -391,15 +391,13 @@ const token = localStorage.getItem('token');
     }
 
     if (userRole === 'user') {
-        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-          const href = item.querySelector('a')?.getAttribute('href');
-          if (
-            href !== 'index.html' 
-          ) {
-            item.style.display = 'none';
-          }
-        });
-      }
+      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+        const href = item.querySelector('a')?.getAttribute('href');
+        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+          item.style.display = 'none';
+        }
+      });
+    }
 
     function logout() {
       showToast("Logging out...", "#25d366");

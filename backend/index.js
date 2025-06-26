@@ -467,14 +467,28 @@ app.delete('/api/contacts/:id', async (req, res) => {
 // Get message history
 app.get('/api/history', async (_, res) => {
   try {
-    const result = await pool.query('SELECT * FROM messages ORDER BY timestamp DESC LIMIT 100');
+    const result = await pool.query(`
+      SELECT m.id, m.message, m.numbers, m.category_name, m.timestamp,
+             u.id AS user_id, u.name AS user_name, u.email AS user_email
+      FROM messages m
+      LEFT JOIN users u ON m.user_id = u.id
+      ORDER BY m.timestamp DESC
+      LIMIT 100
+    `);
+
     const history = result.rows.map(row => ({
       id: row.id,
       message: row.message,
       numbers: row.numbers,
       categoryName: row.category_name,
-      timestamp: row.timestamp
+      timestamp: row.timestamp,
+      user: row.user_id ? {
+        id: row.user_id,
+        name: row.user_name,
+        email: row.user_email
+      } : null
     }));
+
     res.json(history);
   } catch (error) {
     console.error('Error fetching message history:', error);
@@ -482,18 +496,14 @@ app.get('/api/history', async (_, res) => {
   }
 });
 
-
-// Send WhatsApp message to numbers or category contacts
-// Send WhatsApp message and store history
+// Send WhatsApp message and store history (with user)
 app.post('/api/send', async (req, res) => {
-  const { numbers, message, category } = req.body;
+  const { numbers, message, category, userId } = req.body;
   let contactsNumbers = numbers || [];
-
   let categoryName = null;
 
   try {
     if (category) {
-      // Get contacts by category id via join
       const result = await pool.query(`
         SELECT contacts.number, contacts.name
         FROM contacts
@@ -504,7 +514,6 @@ app.post('/api/send', async (req, res) => {
 
       contactsNumbers = result.rows.map(r => r.number);
 
-      // Get category name
       const cat = await pool.query('SELECT name FROM categories WHERE id = $1', [category]);
       categoryName = cat.rows[0]?.name || null;
     }
@@ -521,19 +530,20 @@ app.post('/api/send', async (req, res) => {
       }
     }
 
-    // Save message history
+    // Save message with user
+    console.log(userId,"=========================================")
     await pool.query(
-      'INSERT INTO messages (message, numbers, category_name) VALUES ($1, $2, $3)',
-      [message, contactsNumbers, categoryName]
+      'INSERT INTO messages (message, numbers, category_name, user_id) VALUES ($1, $2, $3, $4)',
+      [message, contactsNumbers, categoryName, userId || null]
     );
 
     res.json({ success: true });
-
   } catch (err) {
     console.error('Error in /api/send:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
 
 

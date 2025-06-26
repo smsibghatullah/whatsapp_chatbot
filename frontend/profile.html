@@ -311,7 +311,7 @@
     if (userRole === 'user') {
       document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
         const href = item.querySelector('a')?.getAttribute('href');
-        if (href !== 'index.html' && href !== 'profile.html') {
+        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
           item.style.display = 'none';
         }
       });

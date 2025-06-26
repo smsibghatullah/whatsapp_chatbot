@@ -1,3 +1,15 @@
-2025/06/26-10:02:17.106 22dda6 Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
-2025/06/26-10:02:17.107 22dda6 Recovering log #28
-2025/06/26-10:02:17.107 22dda6 Reusing old log /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000028.log 
+2025/06/26-10:48:11.624 22eba9 Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2025/06/26-10:48:11.624 22eba9 Recovering log #28
+2025/06/26-10:48:11.624 22eba9 Reusing old log /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Local Storage/leveldb/000028.log 
+2025/06/26-10:50:12.240 22ec0f Level-0 table #32: started
+2025/06/26-10:50:12.245 22ec0f Level-0 table #32: 18062 bytes OK
+2025/06/26-10:50:12.248 22ec0f Delete type=0 #28
+2025/06/26-10:50:12.248 22ec0f Compacting 4@0 + 1@1 files
+2025/06/26-10:50:12.254 22ec0f Generated table #33@0: 178 keys, 6760 bytes
+2025/06/26-10:50:12.254 22ec0f Compacted 4@0 + 1@1 files => 6760 bytes
+2025/06/26-10:50:12.256 22ec0f compacted to: files[ 0 1 1 0 0 0 0 ]
+2025/06/26-10:50:12.257 22ec0f Delete type=2 #29
+2025/06/26-10:50:12.257 22ec0f Delete type=2 #25
+2025/06/26-10:50:12.257 22ec0f Delete type=2 #23
+2025/06/26-10:50:12.257 22ec0f Delete type=2 #32
+2025/06/26-10:50:12.257 22ec0f Delete type=2 #20

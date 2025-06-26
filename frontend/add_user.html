@@ -404,15 +404,13 @@
     }
 
     if (userRole === 'user') {
-        document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-          const href = item.querySelector('a')?.getAttribute('href');
-          if (
-            href !== 'index.html' 
-          ) {
-            item.style.display = 'none';
-          }
-        });
-      }
+      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+        const href = item.querySelector('a')?.getAttribute('href');
+        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+          item.style.display = 'none';
+        }
+      });
+    }
 
     function logout() {
     showToast("Logging out...", "#25d366");
@@ -434,7 +432,7 @@
     let allUsers = [];
     let filteredUsers = [];
     let currentPage = 1;
-    const usersPerPage = 10;
+    let usersPerPage = 10;
 
     async function fetchUsers() {
       try {
@@ -482,7 +480,7 @@
       const pagination = document.getElementById('pagination');
       pagination.innerHTML = '';
       const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-      if (totalPages <= 1) return;
+      // if (totalPages <= 1) return;
 
       // Prev button
       const prevBtn = document.createElement('button');
