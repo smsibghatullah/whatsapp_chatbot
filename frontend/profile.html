@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>User Profile</title>
+  <title>WhatsApp</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="icon" href="https://img.icons8.com/color/48/000000/whatsapp.png" />
   <style>
     :root {
       --green: #25d366;
@@ -102,11 +103,6 @@
       gap: 10px;
     }
 
-    .navbar .right-section {
-      display: flex;
-      align-items: center;
-    }
-
     .navbar .right-section button {
       margin-left: 10px;
       background-color: var(--dark-green);
@@ -133,6 +129,7 @@
       border-radius: 10px;
       margin: 0 auto;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
     }
 
     .form-box h2 {
@@ -144,35 +141,28 @@
     form {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 15px;
     }
 
     .form-box form label {
       font-weight: 500;
-      margin-top: 10px;
       color: var(--text-dark);
     }
 
-    .form-box input,
-    .form-box select,
-    .form-box textarea {
+    .form-box input {
       padding: 12px 14px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-size: 14px;
-      transition: border 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .form-box input:focus,
-    .form-box select:focus,
-    .form-box textarea:focus {
+    .form-box input:focus {
       border-color: var(--green);
       outline: none;
       box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.2);
     }
 
     .form-box button[type="submit"] {
-      margin-top: 10px;
       background-color: var(--green);
       color: white;
       font-weight: bold;
@@ -213,6 +203,7 @@
       width: 150px;
       height: 150px;
       margin-bottom: 15px;
+      cursor: pointer;
     }
 
     .image-wrapper img {
@@ -223,22 +214,32 @@
       border: 3px solid var(--green);
     }
 
-    #imageUpload {
+    .edit-icon {
       position: absolute;
-      bottom: -10px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 12px;
+      bottom: 8px;
+      right: 8px;
+      background-color: var(--dark-green);
+      color: white;
+      border-radius: 50%;
+      padding: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 10;
     }
 
-    .details p {
-      margin: 5px 0;
+    .image-wrapper:hover .edit-icon {
+      opacity: 1;
+    }
+
+    #imageUpload {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-header">WhatsApp Messenger</div>
     <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a></div>
@@ -248,7 +249,6 @@
     <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a></div>
   </div>
 
-  <!-- Main -->
   <div class="main">
     <div class="navbar">
       <div class="brand"><strong>Profile</strong></div>
@@ -262,18 +262,27 @@
         <h2>User Details</h2>
 
         <div class="profile-container">
-          <div class="image-wrapper">
-            <img id="profileImage" src="https://via.placeholder.com/150" alt="Profile" />
+          <div class="image-wrapper" onclick="triggerImageUpload()">
+            <img id="profileImage" src="../images/avatar.png" alt="Profile" />
+            <i class="fas fa-pen edit-icon"></i>
             <input type="file" id="imageUpload" accept="image/*" />
-          </div>
-          <div class="details">
-            <p><strong>Name:</strong> <span id="userName">Loading...</span></p>
-            <p><strong>Email:</strong> <span id="userEmail">Loading...</span></p>
-            <p><strong>Role:</strong> <span id="userRole">Loading...</span></p>
           </div>
         </div>
 
-        <hr style="margin: 20px 0;" />
+        <form id="updateForm">
+          <label for="name">Name</label>
+          <input type="text" id="name" required />
+
+          <label for="email">Email</label>
+          <input type="email" id="email" required />
+
+          <label style="display: none;" for="role">Role</label>
+          <input type="text" id="role" style="display: none;" required />
+
+          <button type="submit">Update Profile</button>
+        </form>
+
+        <hr style="margin: 30px 0;" />
 
         <h2>Change Password</h2>
         <form id="passwordForm">
@@ -289,14 +298,12 @@
     </div>
   </div>
 
-  <!-- Toast -->
   <div id="toast"></div>
 
   <script>
     const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "login.html";
-    }
+    if (!token) window.location.href = "login.html";
+
     const payload = JSON.parse(atob(token.split('.')[1]));
     const userId = payload.id;
     const userRole = payload.role;
@@ -309,6 +316,8 @@
         }
       });
     }
+
+    let base64Image = "";
 
     function showToast(message, color = "#f44336") {
       const toast = document.getElementById("toast");
@@ -326,12 +335,11 @@
         const users = await res.json();
         const user = users.find(u => u.id === userId);
         if (user) {
-          document.getElementById("userName").textContent = user.name;
-          document.getElementById("userEmail").textContent = user.email;
-          document.getElementById("userRole").textContent = user.role;
-          if (user.image_url) {
-            document.getElementById("profileImage").src = user.image_url;
-          }
+          document.getElementById("name").value = user.name;
+          document.getElementById("email").value = user.email;
+          document.getElementById("role").value = user.role;
+          document.getElementById("profileImage").src = user.image || "../images/avatar.png";
+          base64Image = user.image || "";
         }
       } catch (err) {
         console.error(err);
@@ -339,13 +347,39 @@
       }
     }
 
+    document.getElementById("updateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const role = document.getElementById("role").value.trim();
+
+      try {
+        const res = await fetch(`/api/users/${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, role, image: base64Image }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json();
+          return showToast(data.error || "Update failed");
+        }
+
+        showToast("Profile updated!", "#25d366");
+        loadUserInfo();
+      } catch (err) {
+        console.error(err);
+        showToast("Server error");
+      }
+    });
+
     document.getElementById("imageUpload").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (file) {
         const reader = new FileReader();
         reader.onload = function (event) {
-          document.getElementById("profileImage").src = event.target.result;
-          // optionally send to API: event.target.result (base64)
+          base64Image = event.target.result;
+          document.getElementById("profileImage").src = base64Image;
         };
         reader.readAsDataURL(file);
       }
@@ -361,17 +395,15 @@
       }
 
       try {
-        const res = await fetch(`/api/users/${userId}`, {
+        const res = await fetch(`/api/users/${userId}/password`, {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ password: newPassword })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: newPassword }),
         });
 
         if (!res.ok) {
           const data = await res.json();
-          return showToast(data.error || "Update failed");
+          return showToast(data.error || "Password update failed");
         }
 
         showToast("Password updated!", "#25d366");
@@ -383,6 +415,10 @@
       }
     });
 
+    function triggerImageUpload() {
+      document.getElementById("imageUpload").click();
+    }
+
     function logout() {
       localStorage.removeItem("token");
       window.location.href = "login.html";
@@ -390,5 +426,6 @@
 
     loadUserInfo();
   </script>
+
 </body>
 </html>
