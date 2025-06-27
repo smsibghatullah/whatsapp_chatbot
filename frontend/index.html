@@ -284,12 +284,34 @@
       box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.1);
     }
 
-    
+    #qrcode {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 300px;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+    #loader {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #25d366;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
 
     #contactSelect,
-#numberInput {
-  width: 100%;
-}
+    #numberInput {
+      width: 100%;
+    }
 
     @media (max-width: 768px) {
       .sidebar {
@@ -372,7 +394,7 @@
 <div id="toast"></div>
 
   <!-- Scripts -->
-  <script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
   (async () => {
   const token = localStorage.getItem('token');
@@ -418,6 +440,23 @@
   }
 })();
 
+const token = localStorage.getItem('token');
+    if (!token) window.location.href = 'login.html';
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userRole = payload.role;
+    const userId = payload.id;
+
+    if (userRole === 'user') {
+      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+        const href = item.querySelector('a')?.getAttribute('href');
+        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    if (userRole !== 'admin') window.location.href = 'index.html';
 
   function logout() {
     showToast("Logging out...", "#25d366");
@@ -428,12 +467,24 @@
   }
 
   const socket = io();
+  const qrcodeDiv = document.getElementById('qrcode');
+
+  // qrcodeDiv.innerHTML = '<div id="loader"></div>';
+
   socket.on('qr', qr => {
-    document.getElementById('qrcode').innerHTML = `<img src="${qr}" width="280">`;
+    qrcodeDiv.innerHTML = `<img src="${qr}" width="280">`;
   });
 
   socket.on('ready', () => {
-    document.getElementById('qrcode').innerHTML = '<p style="color:green;">WhatsApp Connected</p>';
+    qrcodeDiv.innerHTML = '<div id="loader"></div>';
+    
+    setTimeout(() => {
+      qrcodeDiv.innerHTML = `
+        <div style="color: green; font-weight: bold; font-size: 18px;">
+          ✅ WhatsApp Connected
+        </div>
+      `;
+    }, 2000); 
   });
 
   const useCategory = document.getElementById('useCategory');

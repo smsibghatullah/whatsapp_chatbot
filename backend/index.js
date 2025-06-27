@@ -38,6 +38,7 @@ client.initialize();
 app.use('/images', express.static(__dirname + '/images'));
 
 
+
 app.post('/api/logout-whatsapp', async (req, res) => {
   try {
     await client.logout(); // WhatsApp se logout
@@ -534,6 +535,10 @@ app.post('/api/send', async (req, res) => {
   let categoryName = null;
 
   try {
+    if (!client || !client.info || !client.info.wid) {
+      return res.status(400).json({ error: 'Your WhatsApp is not connected' });
+    }
+
     if (category) {
       const result = await pool.query(`
         SELECT contacts.number, contacts.name
@@ -557,12 +562,10 @@ app.post('/api/send', async (req, res) => {
       try {
         await client.sendMessage(formatted, message);
       } catch (error) {
-        console.error('Failed to send message:', error);
+        console.error('Failed to send message to', formatted, ':', error.message);
       }
     }
 
-    // Save message with user
-    console.log(userId,"=========================================")
     await pool.query(
       'INSERT INTO messages (message, numbers, category_name, user_id) VALUES ($1, $2, $3, $4)',
       [message, contactsNumbers, categoryName, userId || null]
@@ -574,8 +577,6 @@ app.post('/api/send', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-
 
 
 // Start server

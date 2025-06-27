@@ -1,3 +1,2 @@
-2025/06/26-15:37:52.153 2d7aff Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Service Worker/Database/MANIFEST-000001
-2025/06/26-15:37:52.154 2d7aff Recovering log #3
-2025/06/26-15:37:52.154 2d7aff Reusing old log /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Service Worker/Database/000003.log 
+2025/06/27-09:52:51.886 2d9e0f Creating DB /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Service Worker/Database since it was missing.
+2025/06/27-09:52:51.891 2d9e0f Reusing MANIFEST /home/ubuntu/projects/Nodejs/whatsapp-gpt-bot/backend/.wwebjs_auth/session/Default/Service Worker/Database/MANIFEST-000001
