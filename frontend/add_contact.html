@@ -49,7 +49,7 @@
       color: var(--dark-green); font-weight: bold;
     }
     .main {
-      margin-left: 300px; flex: 1; display: flex; flex-direction: column;
+      margin-left: 300px; flex: 1; display: flex; flex-direction: column;margin-bottom: 30px;
     }
     .navbar {
       height: 60px;
@@ -274,6 +274,57 @@
       opacity: 0.5;
       cursor: default;
     }
+    .main-footer {
+      background-color: var(--dark-green);
+      color: white;
+      padding: 12px 0;
+      text-align: center;
+      font-size: 14px;
+      border-top: 1px solid #ccc;
+      position: fixed;
+      bottom: 0;
+      left: 300px;
+      right: 0;
+      z-index: 10;
+    }
+
+    .main-footer a {
+      color: white;
+      text-decoration: none;
+      margin: 0 10px;
+    }
+
+    .main-footer span {
+      margin: 0 10px;
+    }
+
+  
+
+    .sidebar-footer {
+      margin-top: auto;
+      background-color: var(--dark-green);
+      color: white;
+      text-align: center;
+      padding: 12px 10px;
+      font-size: 13px;
+      height: 40px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+        position: absolute;
+      }
+
+      .main {
+        margin-left: 0;
+      }
+
+      .main-footer {
+        left: 0;
+      }
+    }
   </style>
 </head>
 <body>
@@ -289,6 +340,9 @@
         <i class="fab fa-whatsapp"></i> WhatsApp Logout
       </a>
       <hr />
+    </div>
+    <div class="sidebar-footer">
+      
     </div>
   </div>
 
@@ -326,13 +380,7 @@
         
       </div>
     </div>
-    <footer style="border-top: 1px solid #ccc; padding: 10px 0; text-align: center; font-size: 14px;">
-      <span style="font-weight: bold;">@ DSM - Dynamic Solution Maker</span>
-      <span style="margin: 0 20px;">|</span>
-      <a href="https://www.dsmpk.com" target="_blank" style="color: inherit; text-decoration: none;">www.dsmpk.com</a>
-      <span style="margin: 0 20px;">|</span>
-      <span>+92 345 3074064</span>
-    </footer> 
+   
   </div>
 
   <div class="modal" id="editModal">
@@ -367,7 +415,13 @@
       </div>
     </div>
   </div>
-
+  <footer class="main-footer">
+    <span><strong>&copy; DSM - Dynamic Solution Maker</strong></span>
+    <span>|</span>
+    <a href="https://www.dsmpk.com" target="_blank">www.dsmpk.com</a>
+    <span>|</span>
+    <span>+92 345 3074064</span>
+  </footer>
   <div id="toast"></div>
 
 <!-- Insert this inside your <script> tag, replacing the existing one -->
