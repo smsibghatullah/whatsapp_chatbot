@@ -526,47 +526,55 @@
     const rowsPerPage = 10;
     (async () => {
             const token = localStorage.getItem('token');
+            if (!token) return (window.location.href = 'login.html');
 
-            if (!token) {
-              return window.location.href = 'login.html';
-            }
-
-            // Server se token validate karo
-            const verify = await fetch('/api/verify-token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token })
-            });
-
-            const verifyResult = await verify.json();
-
-            if (!verify.ok || !verifyResult.valid) {
-              localStorage.clear(); // token hata do
-              return window.location.href = 'login.html';
-            }
-
-            // Token valid hai, ab payload decode karo
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const userRole = payload.role;
-            const userId = payload.id;
-
-            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-
-            // Role-based page restriction
-            if (userRole !== 'admin' && currentPage !== 'index.html') {
-              window.location.href = 'index.html';
-            }
-
-            // User role ka sidebar access limit
-            if (userRole === 'user') {
-              document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-                const href = item.querySelector('a')?.getAttribute('href');
-                if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-                  item.style.display = 'none';
-                }
+            try {
+              const verify = await fetch('/api/verify-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
               });
+
+              const verifyResult = await verify.json();
+
+              if (!verify.ok || !verifyResult.valid) {
+                localStorage.clear();
+                return (window.location.href = 'login.html');
+              }
+
+              const payload = JSON.parse(atob(token.split('.')[1]));
+
+              // ✅ Make global for access anywhere
+              window.userRole = payload.role;
+              window.userId = payload.id;
+
+              const pageName = location.pathname.split('/').pop() || 'index.html';
+
+              // Restrict access to certain pages
+              if (
+                window.userRole !== 'admin' &&
+                !['index.html', 'profile.html', 'history.html'].includes(pageName)
+              ) {
+                return (window.location.href = 'index.html');
+              }
+
+              // Hide sidebar menu items for "user"
+              if (window.userRole === 'user') {
+                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+                  const href = item.querySelector('a')?.getAttribute('href');
+                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+                    item.style.display = 'none';
+                  }
+                });
+              }
+
+            } catch (err) {
+              console.error('Verification failed:', err);
+              localStorage.clear();
+              window.location.href = 'login.html';
             }
-})();
+          })();
+
     function logout() {
       showToast("Logging out...", "#25d366");
       localStorage.removeItem('token');

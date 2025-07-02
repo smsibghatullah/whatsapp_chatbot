@@ -398,8 +398,12 @@
               <th>Message</th>
               <th>Category / Source</th>
               <th>Sent By</th>
+              <th>Image</th>
+              <th>Voice</th>
             </tr>
           </thead>
+          
+          
           <tbody></tbody>
         </table>
 
@@ -415,150 +419,182 @@
     <span>|</span>
     <span>+92 345 3074064</span>
   </footer>
+  <!-- Image Modal -->
+<div id="imageModal" style="display:none; position:fixed; z-index:9999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); align-items:center; justify-content:center;">
+  <span id="closeModal" style="position:absolute; top:20px; right:30px; font-size:30px; color:white; cursor:pointer;">&times;</span>
+  <img id="modalImage" src="" style="max-width:90%; max-height:90%; border-radius:10px;" />
+</div>
+
   <!-- Toast -->
   <div id="toast"></div>
 
   <script>
-
-(async () => {
+      (async () => {
             const token = localStorage.getItem('token');
+            if (!token) return (window.location.href = 'login.html');
 
-            if (!token) {
-              return window.location.href = 'login.html';
-            }
-
-            // Server se token validate karo
-            const verify = await fetch('/api/verify-token', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token })
-            });
-
-            const verifyResult = await verify.json();
-
-            if (!verify.ok || !verifyResult.valid) {
-              localStorage.clear(); // token hata do
-              return window.location.href = 'login.html';
-            }
-
-            // Token valid hai, ab payload decode karo
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const userRole = payload.role;
-            const userId = payload.id;
-
-            const currentPage = window.location.pathname.split('/').pop() || 'index.html';
-
-            // Role-based page restriction
-            if (userRole !== 'admin' && currentPage !== 'index.html') {
-              window.location.href = 'index.html';
-            }
-
-            // User role ka sidebar access limit
-            if (userRole === 'user') {
-              document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-                const href = item.querySelector('a')?.getAttribute('href');
-                if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-                  item.style.display = 'none';
-                }
+            try {
+              const verify = await fetch('/api/verify-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
               });
+
+              const verifyResult = await verify.json();
+
+              if (!verify.ok || !verifyResult.valid) {
+                localStorage.clear();
+                return (window.location.href = 'login.html');
+              }
+
+              const payload = JSON.parse(atob(token.split('.')[1]));
+
+              // ✅ Make global for access anywhere
+              window.userRole = payload.role;
+              window.userId = payload.id;
+
+              const pageName = location.pathname.split('/').pop() || 'index.html';
+
+              // Restrict access to certain pages
+              if (
+                window.userRole !== 'admin' &&
+                !['index.html', 'profile.html', 'history.html'].includes(pageName)
+              ) {
+                return (window.location.href = 'index.html');
+              }
+
+              // Hide sidebar menu items for "user"
+              if (window.userRole === 'user') {
+                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+                  const href = item.querySelector('a')?.getAttribute('href');
+                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+                    item.style.display = 'none';
+                  }
+                });
+              }
+
+            } catch (err) {
+              console.error('Verification failed:', err);
+              localStorage.clear();
+              window.location.href = 'login.html';
             }
-})();
-
-
-
-
-    const token = localStorage.getItem('token');
-    if (!token) window.location.href = 'login.html';
-
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userRole = payload.role;
-    const userId = payload.id;
-
-    if (userRole === 'user') {
-      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-        const href = item.querySelector('a')?.getAttribute('href');
-        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-          item.style.display = 'none';
-        }
-      });
-    }
-
-    if (userRole !== 'admin') window.location.href = 'index.html';
-
+          })();
+          
     let historyData = [];
     let filteredData = [];
     let currentPage = 1;
     const rowsPerPage = 10;
 
+    function showImageModal(src) {
+        const modal = document.getElementById("imageModal");
+        const modalImg = document.getElementById("modalImage");
+        modal.style.display = "flex";
+        modalImg.src = src;
+      }
+
+      document.getElementById("closeModal").onclick = function () {
+        document.getElementById("imageModal").style.display = "none";
+      };
+
+      document.getElementById("imageModal").addEventListener("click", function (e) {
+        if (e.target === this) this.style.display = "none";
+      });
+
+    
     function showToast(message) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.style.display = 'block';
       setTimeout(() => toast.style.display = 'none', 3000);
     }
-
+    
     function logout() {
       localStorage.removeItem('token');
       showToast("Logging out...");
       setTimeout(() => window.location.href = 'login.html', 1500);
     }
-
+    
     function renderTablePage(page) {
-      const tbody = document.querySelector("#historyTable tbody");
-      tbody.innerHTML = "";
+  const tbody = document.querySelector("#historyTable tbody");
+  tbody.innerHTML = "";
 
-      const start = (page - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      const pageData = filteredData.slice(start, end);
+  const start = (page - 1) * rowsPerPage;
+  const end = start + rowsPerPage;
+  const pageData = filteredData.slice(start, end);
 
-      pageData.forEach(entry => {
-        const row = document.createElement("tr");
+  pageData.forEach(entry => {
+    const row = document.createElement("tr");
 
-        const toCell = document.createElement("td");
-        toCell.innerHTML = entry.numbers.map(num => `<div>${num}</div>`).join("");
+    // Recipients
+    const toCell = document.createElement("td");
+    toCell.innerHTML = entry.numbers.map(num => `<div>${num}</div>`).join("");
+    row.appendChild(toCell);
 
-        const timeCell = document.createElement("td");
-        const time = new Date(entry.timestamp);
-        timeCell.textContent = time.toLocaleString();
+    // Time
+    const timeCell = document.createElement("td");
+    const time = new Date(entry.timestamp);
+    timeCell.textContent = time.toLocaleString();
+    row.appendChild(timeCell);
 
-        const msgCell = document.createElement("td");
-        const msgDiv = document.createElement("div");
-        msgDiv.classList.add("message-text");
-        msgDiv.textContent = entry.message;
-        msgCell.appendChild(msgDiv);
+    // Message
+    const msgCell = document.createElement("td");
+    const msgDiv = document.createElement("div");
+    msgDiv.classList.add("message-text");
+    msgDiv.textContent = entry.message || "";
+    msgCell.appendChild(msgDiv);
 
-        if (entry.message.length > 150) {
-          const btn = document.createElement("span");
-          btn.classList.add("read-more-btn");
-          btn.textContent = "Read More";
-          btn.addEventListener("click", () => {
-            msgDiv.classList.toggle("expanded");
-            btn.textContent = msgDiv.classList.contains("expanded") ? "Read Less" : "Read More";
-          });
-          msgCell.appendChild(btn);
-        }
-
-        const categoryCell = document.createElement("td");
-        categoryCell.textContent = entry.categoryName || "Manual";
-
-        const userCell = document.createElement("td");
-        userCell.textContent = entry.user?.name || "Unknown"; // ✅
-
-        row.appendChild(toCell);
-        row.appendChild(timeCell);
-        row.appendChild(msgCell);
-        row.appendChild(categoryCell);
-        row.appendChild(userCell); // ✅
-
-        tbody.appendChild(row);
+    if ((entry.message || "").length > 150) {
+      const btn = document.createElement("span");
+      btn.classList.add("read-more-btn");
+      btn.textContent = "Read More";
+      btn.addEventListener("click", () => {
+        msgDiv.classList.toggle("expanded");
+        btn.textContent = msgDiv.classList.contains("expanded") ? "Read Less" : "Read More";
       });
+      msgCell.appendChild(btn);
     }
+    row.appendChild(msgCell);
 
+    // Category
+    const categoryCell = document.createElement("td");
+    categoryCell.textContent = entry.categoryName || "Manual";
+    row.appendChild(categoryCell);
+
+    // Sent By
+    const userCell = document.createElement("td");
+    userCell.textContent = entry.user?.name || "Unknown";
+    row.appendChild(userCell);
+
+    // Image
+    const imageCell = document.createElement("td");
+    if (entry.image && entry.image.trim() !== "") {
+      const imgPath = entry.image.startsWith("http") ? entry.image : "/" + entry.image;
+      imageCell.innerHTML = `<img src="${imgPath}" width="50" height="50" style="border-radius: 6px; cursor: pointer;" onclick="showImageModal('${imgPath}')" />`;
+    } else {
+      imageCell.textContent = "-";
+    }
+    row.appendChild(imageCell);
+
+    // Voice Note
+    const voiceCell = document.createElement("td");
+    if (entry.voice_note && entry.voice_note.trim() !== "") {
+      const voicePath = entry.voice_note.startsWith("http") ? entry.voice_note : "/" + entry.voice_note;
+      voiceCell.innerHTML = `<audio controls style="width: 100px;"><source src="${voicePath}" type="audio/ogg"></audio>`;
+    } else {
+      voiceCell.textContent = "-";
+    }
+    row.appendChild(voiceCell);
+
+    tbody.appendChild(row);
+  });
+}
+
+    
     function renderPagination() {
       const container = document.getElementById("pagination");
       container.innerHTML = "";
       const pageCount = Math.ceil(filteredData.length / rowsPerPage);
-
+    
       const prev = document.createElement("button");
       prev.textContent = "Prev";
       prev.disabled = currentPage === 1;
@@ -569,7 +605,7 @@
         }
       };
       container.appendChild(prev);
-
+    
       for (let i = 1; i <= pageCount; i++) {
         const btn = document.createElement("button");
         btn.textContent = i;
@@ -580,7 +616,7 @@
         };
         container.appendChild(btn);
       }
-
+    
       const next = document.createElement("button");
       next.textContent = "Next";
       next.disabled = currentPage === pageCount;
@@ -592,12 +628,12 @@
       };
       container.appendChild(next);
     }
-
+    
     function updateTableAndPagination() {
       renderTablePage(currentPage);
       renderPagination();
     }
-
+    
     function filterData() {
       const filter = document.getElementById("searchInput").value.toLowerCase();
       filteredData = historyData.filter(entry => {
@@ -613,43 +649,44 @@
       currentPage = 1;
       updateTableAndPagination();
     }
-
+    
     async function loadHistory() {
-        try {
-          const res = await fetch("/api/history");
-          const data = await res.json();
-
-          if (userRole === "admin") {
-            historyData = data;
-          } else {
-            historyData = data.filter(entry => entry.user?.id === userId);
-          }
-
-          filteredData = [...historyData];
-          updateTableAndPagination();
-        } catch (err) {
-          console.error("Error loading history", err);
-          showToast("Failed to load history");
+      try {
+        const res = await fetch("/api/history");
+        const data = await res.json();
+    
+        if (window.userRole === "admin") {
+          historyData = data;
+        } else {
+          historyData = data.filter(entry => entry.user?.id === window.userId);
         }
+    
+        filteredData = [...historyData];
+        updateTableAndPagination();
+      } catch (err) {
+        console.error("Error loading history", err);
+        showToast("Failed to load history");
       }
-
-      function whatsapplogout() {
-          localStorage.removeItem('token');
-
-          fetch('/api/logout-whatsapp', {
-            method: 'POST',
-          })
-            .then(() => {
-              window.location.href = 'login.html';
-            })
-            .catch((err) => {
-              console.error('Logout error:', err);
-              window.location.href = 'login.html';
-            });
-        }
-
+    }
+    
+    function whatsapplogout() {
+      localStorage.removeItem('token');
+    
+      fetch('/api/logout-whatsapp', {
+        method: 'POST',
+      })
+        .then(() => {
+          window.location.href = 'login.html';
+        })
+        .catch((err) => {
+          console.error('Logout error:', err);
+          window.location.href = 'login.html';
+        });
+    }
+    
     document.getElementById("searchInput").addEventListener("input", filterData);
     loadHistory();
-  </script>
+    </script>
+    
 </body>
 </html>

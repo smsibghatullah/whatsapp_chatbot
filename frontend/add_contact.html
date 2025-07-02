@@ -433,60 +433,93 @@ let currentPage = 1;
 const recordsPerPage = 10;
 
 const countryPhoneRules = {
-  "1": { min: 10, max: 10 },
-  "44": { min: 10, max: 10 },
-  "92": { min: 9, max: 10 },
-  "91": { min: 10, max: 10 },
-  "61": { min: 9, max: 9 },
-  "81": { min: 10, max: 10 },
-  "49": { min: 10, max: 11 },
-  "33": { min: 9, max: 9 },
-  "86": { min: 11, max: 11 },
+  "1": { min: 10, max: 10 },     // USA
+  "44": { min: 10, max: 10 },    // UK
+  "92": { min: 9, max: 10 },     // Pakistan
+  "91": { min: 10, max: 10 },    // India
+  "61": { min: 9, max: 9 },      // Australia
+  "81": { min: 10, max: 10 },    // Japan
+  "49": { min: 10, max: 11 },    // Germany
+  "33": { min: 9, max: 9 },      // France
+  "86": { min: 11, max: 11 },    // China
+  "971": { min: 9, max: 9 },     //uae
+  "64": { min: 8, max: 10 }, 
 };
 
+function isValidPhoneNumber(rawNumber) {
+  if (!rawNumber.startsWith('+')) {
+    rawNumber = '+' + rawNumber;
+  }
+
+  let code = null;
+  for (let len = 1; len <= 3; len++) {
+    const possibleCode = rawNumber.slice(1, 1 + len);
+    if (countryPhoneRules.hasOwnProperty(possibleCode)) {
+      code = possibleCode;
+      break;
+    }
+  }
+
+  if (!code) return false;
+
+  const rule = countryPhoneRules[code];
+  const localNumber = rawNumber.slice(1 + code.length);
+
+  if (!/^[0-9]+$/.test(localNumber)) return false;
+
+  return localNumber.length >= rule.min && localNumber.length <= rule.max;
+}
 (async () => {
-  const token = localStorage.getItem('token');
+            const token = localStorage.getItem('token');
+            if (!token) return (window.location.href = 'login.html');
 
-  if (!token) {
-    return window.location.href = 'login.html';
-  }
+            try {
+              const verify = await fetch('/api/verify-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
+              });
 
-  // Server se token validate karo
-  const verify = await fetch('/api/verify-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token })
-  });
+              const verifyResult = await verify.json();
 
-  const verifyResult = await verify.json();
+              if (!verify.ok || !verifyResult.valid) {
+                localStorage.clear();
+                return (window.location.href = 'login.html');
+              }
 
-  if (!verify.ok || !verifyResult.valid) {
-    localStorage.clear(); // token hata do
-    return window.location.href = 'login.html';
-  }
+              const payload = JSON.parse(atob(token.split('.')[1]));
 
-  // Token valid hai, ab payload decode karo
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  const userRole = payload.role;
-  const userId = payload.id;
+              // ✅ Make global for access anywhere
+              window.userRole = payload.role;
+              window.userId = payload.id;
 
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+              const pageName = location.pathname.split('/').pop() || 'index.html';
 
-  // Role-based page restriction
-  if (userRole !== 'admin' && currentPage !== 'index.html') {
-    window.location.href = 'index.html';
-  }
+              // Restrict access to certain pages
+              if (
+                window.userRole !== 'admin' &&
+                !['index.html', 'profile.html', 'history.html'].includes(pageName)
+              ) {
+                return (window.location.href = 'index.html');
+              }
 
-  // User role ka sidebar access limit
-  if (userRole === 'user') {
-    document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-      const href = item.querySelector('a')?.getAttribute('href');
-      if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-        item.style.display = 'none';
-      }
-    });
-  }
-})();
+              // Hide sidebar menu items for "user"
+              if (window.userRole === 'user') {
+                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+                  const href = item.querySelector('a')?.getAttribute('href');
+                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+                    item.style.display = 'none';
+                  }
+                });
+              }
+
+            } catch (err) {
+              console.error('Verification failed:', err);
+              localStorage.clear();
+              window.location.href = 'login.html';
+            }
+          })();
+
 
     function logout() {
       showToast("Logging out...", "#25d366");
@@ -504,23 +537,6 @@ function showToast(msg, color = '#25d366') {
   setTimeout(() => { toast.style.display = 'none'; }, 3000);
 }
 
-function isValidPhoneNumber(number) {
-  if (!number.startsWith('+')) return false;
-  let code = null;
-  for (let len = 1; len <= 3; len++) {
-    const possibleCode = number.slice(1, 1 + len);
-    if (countryPhoneRules.hasOwnProperty(possibleCode)) {
-      code = possibleCode;
-      break;
-    }
-  }
-  if (!code) return false;
-  const rule = countryPhoneRules[code];
-  const localNumber = number.slice(1 + code.length);
-  if (!/^\d+$/.test(localNumber)) return false;
-  if (localNumber.length < rule.min || localNumber.length > rule.max) return false;
-  return true;
-}
 
 async function loadCategories() {
   const res = await fetch('/api/categories');
@@ -707,10 +723,41 @@ document.getElementById('contactForm').addEventListener('submit', async function
   const number = document.getElementById('contactNumber').value.trim();
   const selected = [...document.getElementById('contactCategory').selectedOptions].map(opt => Number(opt.value));
 
-  if (!isValidPhoneNumber(number)) {
-    showToast("Invalid number! Use format: +CountryCodeNumber (e.g. +923451234567)", "red");
-    return;
+  function getExampleForCountry(code) {
+  const examples = {
+    "1": "+1234567890 (USA)",
+    "44": "+447911123456 (UK)",
+    "92": "+923451234567 (Pakistan)",
+    "91": "+919876543210 (India)",
+    "61": "+61412345678 (Australia)",
+    "81": "+819012345678 (Japan)",
+    "49": "+4915212345678 (Germany)",
+    "33": "+33612345678 (France)",
+    "86": "+8613812345678 (China)",
+    "971": "+971501234567 (UAE)",
+    "64": "+64211234567 (New Zealand)",
+  };
+
+  return examples[code] || "+CountryCodeNumber (e.g. +923451234567)";
+}
+
+function getCountryCodeFromNumber(number) {
+  const countryCodes = Object.keys(countryPhoneRules).sort((a, b) => b.length - a.length);
+  for (const code of countryCodes) {
+    if (number.startsWith("+" + code)) {
+      return code;
+    }
   }
+  return null;
+}
+
+// Use in validation
+if (!isValidPhoneNumber(number)) {
+  const code = getCountryCodeFromNumber(number);
+  const example = getExampleForCountry(code);
+  showToast(`Invalid number! Use format: ${example}`, "red");
+  return;
+}
 
   const isDuplicate = contacts.some(c => c.number === number);
   if (isDuplicate) {
@@ -756,10 +803,41 @@ async function saveEdit() {
   const number = document.getElementById('editNumber').value.trim();
   const selected = [...document.getElementById('editCategories').selectedOptions].map(opt => Number(opt.value));
 
-  if (!isValidPhoneNumber(number)) {
-    showToast("Invalid number! Use format: +CountryCodeNumber (e.g. +923451234567)", "red");
-    return;
+  function getExampleForCountry(code) {
+  const examples = {
+    "1": "+1234567890 (USA)",
+    "44": "+447911123456 (UK)",
+    "92": "+923451234567 (Pakistan)",
+    "91": "+919876543210 (India)",
+    "61": "+61412345678 (Australia)",
+    "81": "+819012345678 (Japan)",
+    "49": "+4915212345678 (Germany)",
+    "33": "+33612345678 (France)",
+    "86": "+8613812345678 (China)",
+    "971": "+971501234567 (UAE)",
+    "64": "+64211234567 (New Zealand)",
+  };
+
+  return examples[code] || "+CountryCodeNumber (e.g. +923451234567)";
+}
+
+function getCountryCodeFromNumber(number) {
+  const countryCodes = Object.keys(countryPhoneRules).sort((a, b) => b.length - a.length);
+  for (const code of countryCodes) {
+    if (number.startsWith("+" + code)) {
+      return code;
+    }
   }
+  return null;
+}
+
+// Use in validation
+if (!isValidPhoneNumber(number)) {
+  const code = getCountryCodeFromNumber(number);
+  const example = getExampleForCountry(code);
+  showToast(`Invalid number! Use format: ${example}`, "red");
+  return;
+}
 
   const res = await fetch(`/api/contacts/${id}`, {
     method: 'PUT',

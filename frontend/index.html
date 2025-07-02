@@ -375,6 +375,46 @@
         left: 0;
       }
     }
+
+    .record-btn, .stop-btn {
+  padding: 10px 16px;
+  font-size: 15px;
+  font-weight: bold;
+  border: none;
+  border-radius: 30px;
+  cursor: pointer;
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.record-btn {
+  background-color: var(--green);
+}
+
+.stop-btn {
+  background-color: #e53935;
+}
+
+.record-btn:hover {
+  background-color: #1ebe5d;
+  transform: scale(1.03);
+}
+
+.stop-btn:hover {
+  background-color: #d32f2f;
+  transform: scale(1.03);
+}
+
+#voiceWrapper label {
+  font-weight: 500;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
   </style>
 </head>
 <body>
@@ -382,11 +422,11 @@
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-header">WhatsApp Messenger</div>
-  <div class="menu-item"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr /></div>
-  <div class="menu-item"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr /></div>
-  <div class="menu-item"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr /></div>
-  <div class="menu-item"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr /></div>
-  <div class="menu-item"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a><hr/></div>
+  <div class="menu-item" data-role="admin,user"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr /></div>
+  <div class="menu-item" data-role="admin"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr /></div>
+  <div class="menu-item" data-role="admin"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr /></div>
+  <div class="menu-item" data-role="admin"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr /></div>
+  <div class="menu-item" data-role="admin,user"><a href="history.html"><i class="fas fa-clock-rotate-left"></i> Message History</a><hr/></div>
   <div class="menu-item">
     <a href="#" onclick="whatsapplogout()">
       <i class="fab fa-whatsapp"></i> WhatsApp Logout
@@ -418,27 +458,60 @@
         <div class="checkbox-group">
           <label><input type="checkbox" id="useCategory" /> Send to Category</label>
         </div>
-
+        
         <select id="categorySelect" disabled>
           <option value="">Select Category</option>
         </select>
-
-        <div class="radio-group" >
+        
+        <!-- Contact or Manual -->
+        <div class="radio-group">
           <label><input type="radio" name="sendTo" value="contact" checked /> Contact</label>
           <label><input type="radio" name="sendTo" value="manual" /> Manual Number</label>
         </div>
-
-        <div id="contactWrapper" >
+        
+        <div id="contactWrapper">
           <select id="contactSelect">
             <option value="">-- Select Contact --</option>
           </select>
         </div>
-
+        
         <div id="manualWrapper" style="display: none;">
           <input type="text" id="numberInput" placeholder="e.g. 923451234567" disabled />
         </div>
-
-        <textarea id="message" placeholder="Enter your message here" rows="4"></textarea>
+        
+        <!-- Message Type Selection -->
+        <label><strong>Select Message Type:</strong></label>
+        <div class="radio-group">
+          <label><input type="radio" name="message_type" value="text" checked /> Text / Image</label>
+          <label><input type="radio" name="message_type" value="voice" /> Voice Note</label>
+        </div>
+        
+        <!-- Conditional Inputs -->
+        <div id="textMessageWrapper" style="width: 100%;">
+          
+          <label>message:</label>
+          <br/>
+          <textarea style="width: 100%;" id="message" name="message" placeholder="Enter your message here" rows="4"></textarea>
+          
+          <label>Image:</label>
+          <br/>
+          <input style="width: 100%;" type="file" name="image" id="image" accept="image/*">
+          
+        </div>
+        
+        <div id="voiceWrapper" style="display: none;">
+          <label>Voice Note:</label>
+          <br/>
+          <button type="button" id="recordBtn" class="record-btn">
+            <i class="fas fa-microphone"></i> Start Recording
+          </button>
+          <button type="button" id="stopBtn" class="stop-btn" disabled>
+            <i class="fas fa-stop"></i> Stop
+          </button>
+          
+          <audio id="audioPreview" controls style="margin-top: 10px; display: none;"></audio>
+        </div>
+        
         <button type="submit">Send</button>
       </form>
       <div id="status"></div>
@@ -461,67 +534,113 @@
   <!-- Scripts -->
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  (async () => {
-  const token = localStorage.getItem('token');
+let mediaRecorder;
+let recordedChunks = [];
 
-  if (!token) {
-    return window.location.href = 'login.html';
-  }
+const recordBtn = document.getElementById('recordBtn');
+const stopBtn = document.getElementById('stopBtn');
+const audioPreview = document.getElementById('audioPreview');
 
-  // Server se token validate karo
-  const verify = await fetch('/api/verify-token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token })
-  });
+(async () => {
+            const token = localStorage.getItem('token');
+            if (!token) return (window.location.href = 'login.html');
 
-  const verifyResult = await verify.json();
+            try {
+              const verify = await fetch('/api/verify-token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token }),
+              });
 
-  if (!verify.ok || !verifyResult.valid) {
-    localStorage.clear(); // token hata do
-    return window.location.href = 'login.html';
-  }
+              const verifyResult = await verify.json();
 
-  // Token valid hai, ab payload decode karo
-  const payload = JSON.parse(atob(token.split('.')[1]));
-  const userRole = payload.role;
-  const userId = payload.id;
+              if (!verify.ok || !verifyResult.valid) {
+                localStorage.clear();
+                return (window.location.href = 'login.html');
+              }
 
-  const currentPage = window.location.pathname.split('/').pop() || 'index.html';
+              const payload = JSON.parse(atob(token.split('.')[1]));
 
-  // Role-based page restriction
-  if (userRole !== 'admin' && currentPage !== 'index.html') {
-    window.location.href = 'index.html';
-  }
+              // ✅ Make global for access anywhere
+              window.userRole = payload.role;
+              window.userId = payload.id;
 
-  // User role ka sidebar access limit
-  if (userRole === 'user') {
-    document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-      const href = item.querySelector('a')?.getAttribute('href');
-      if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-        item.style.display = 'none';
-      }
-    });
-  }
-})();
+              const pageName = location.pathname.split('/').pop() || 'index.html';
 
-const token = localStorage.getItem('token');
-    if (!token) window.location.href = 'login.html';
+              // Restrict access to certain pages
+              if (
+                window.userRole !== 'admin' &&
+                !['index.html', 'profile.html', 'history.html'].includes(pageName)
+              ) {
+                return (window.location.href = 'index.html');
+              }
 
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const userRole = payload.role;
-    const userId = payload.id;
+              // Hide sidebar menu items for "user"
+              if (window.userRole === 'user') {
+                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+                  const href = item.querySelector('a')?.getAttribute('href');
+                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+                    item.style.display = 'none';
+                  }
+                });
+              }
 
-    if (userRole === 'user') {
-      document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-        const href = item.querySelector('a')?.getAttribute('href');
-        if (href !== 'index.html' && href !== 'profile.html' && href !== 'history.html') {
-          item.style.display = 'none';
-        }
-      });
+            } catch (err) {
+              console.error('Verification failed:', err);
+              localStorage.clear();
+              window.location.href = 'login.html';
+            }
+          })();
+
+
+recordBtn.addEventListener('click', async () => {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      showToast("Your browser does not support audio recording.", "#f44336");
+      return;
     }
 
-    if (userRole !== 'admin') window.location.href = 'index.html';
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    recordedChunks = [];
+    mediaRecorder = new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+      const audioURL = URL.createObjectURL(blob);
+      audioPreview.src = audioURL;
+      audioPreview.style.display = 'block';
+      voiceBlob = blob;
+    };
+
+    mediaRecorder.start();
+    recordBtn.disabled = true;
+    stopBtn.disabled = false;
+    showToast("🎙 Recording started...", "#25d366");
+
+  } catch (err) {
+    console.error("Mic error:", err);
+    if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+      showToast("🎤 Microphone permission denied.", "#f44336");
+    } else {
+      showToast("❌ Unable to access microphone.", "#f44336");
+    }
+  }
+});
+
+stopBtn.addEventListener('click', () => {
+  mediaRecorder.stop();
+  recordBtn.disabled = false;
+  stopBtn.disabled = true;
+  showToast("Recording stopped", "#4caf50");
+});
+
+let voiceBlob = null;
+
 
   function logout() {
     showToast("Logging out...", "#25d366");
@@ -631,57 +750,97 @@ const token = localStorage.getItem('token');
     }
   }
 
-  document.getElementById('sendForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    statusDiv.textContent = '';
-    const message = document.getElementById('message').value.trim();
-    if (!message) return showToast('Please enter a message');
+  const typeRadios = document.querySelectorAll('input[name="message_type"]');
+  const textWrapper = document.getElementById('textMessageWrapper');
+  const voiceWrapper = document.getElementById('voiceWrapper');
 
-    let numbers = [], category = null;
-
-    if (useCategory.checked) {
-      category = categorySelect.value;
-      if (!category) return showToast('Select a category');
-    } else {
-      const selectedMode = document.querySelector('input[name="sendTo"]:checked').value;
-      if (selectedMode === 'contact') {
-        const selectedContact = contactSelect.value;
-        if (!selectedContact) return showToast('Please select a contact');
-        numbers = [selectedContact];
-      } else {
-        const manual = numberInput.value.trim();
-        if (!manual) return showToast('Please enter a number');
-        numbers = [manual];
-      }
-    }
-
-    statusDiv.textContent = 'Sending...';
-    try {
-      const res = await fetch('/api/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ numbers, message, category, userId })
-      });
-
-      if (res.ok) {
-        statusDiv.textContent = '';
-        showToast('Message sent successfully!', '#4caf50');
-        document.getElementById('sendForm').reset();
-        categorySelect.disabled = true;
-        numberInput.disabled = false;
-        contactSelect.disabled = false;
-        contactWrapper.style.display = "block";
-        manualWrapper.style.display = "none";
-      } else {
-        const data = await res.json();
-        showToast(data.error || 'Failed to send message');
-        statusDiv.textContent = '';
-      }
-    } catch {
-      showToast('Failed to send message');
-      statusDiv.textContent = '';
-    }
+// Message type toggling
+typeRadios.forEach(radio => {
+  radio.addEventListener('change', () => {
+    const type = radio.value;
+    textWrapper.style.display = type === 'text' ? 'block' : 'none';
+    voiceWrapper.style.display = type === 'voice' ? 'block' : 'none';
   });
+});
+
+
+
+
+document.getElementById('sendForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const form = document.getElementById('sendForm');
+  const formData = new FormData(form);
+
+  const selectedType = document.querySelector('input[name="message_type"]:checked').value;
+  formData.set('message_type', selectedType);
+  formData.set('userId', window.userId);
+
+  let apiUrl = '';
+
+  if (selectedType === 'text') {
+    const message = document.getElementById('message').value.trim();
+    if (!message && !document.getElementById('image').files[0])
+      return showToast("Please enter a message or select an image.");
+
+    formData.set('message', message);
+
+    const imageFile = document.getElementById('image').files[0];
+    if (imageFile) {
+      formData.append('image', imageFile);
+    }
+
+    apiUrl = '/api/send-text-image';  // ✅ Text + Image API
+
+  } else if (selectedType === 'voice') {
+    if (!voiceBlob) return showToast("Please record a voice note first.");
+    const voiceFile = new File([voiceBlob], 'voice.webm', { type: 'audio/webm' });
+    formData.append('voice_note', voiceFile);
+
+    apiUrl = '/api/send-voice';  // ✅ Voice Note API
+  }
+
+  // 📦 Add either category or numbers
+  if (useCategory.checked) {
+    formData.set('category', categorySelect.value);
+  } else {
+    const selectedMode = document.querySelector('input[name="sendTo"]:checked').value;
+    let numbers = [];
+    if (selectedMode === 'contact') {
+      if (!contactSelect.value) return showToast("Please select a contact.");
+      numbers.push(contactSelect.value);
+    } else {
+      if (!numberInput.value.trim()) return showToast("Please enter a number.");
+      numbers.push(numberInput.value.trim());
+    }
+    formData.set('numbers', JSON.stringify(numbers));
+  }
+
+  try {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Message sent successfully!', "#4caf50");
+      form.reset();
+      textWrapper.style.display = 'block';
+      voiceWrapper.style.display = 'none';
+      audioPreview.style.display = 'none';
+      voiceBlob = null;
+    } else {
+      showToast(data.error || 'Failed to send message');
+    }
+  } catch (err) {
+    console.error(err);
+    showToast('❌ Network error!');
+  }
+});
+
+
+
 
   function showToast(message, color = '#f44336') {
     const toast = document.getElementById('toast');

@@ -4,7 +4,7 @@ const { createServer } = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 const QRCode = require('qrcode');
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth ,MessageMedia} = require('whatsapp-web.js');
 const pool = require('./config/db');
 
 const app = express();
@@ -12,9 +12,18 @@ const httpServer = createServer(app);
 const io = new Server(httpServer);
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const fs = require('fs');
+const ffmpeg = require('fluent-ffmpeg');
+
+
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../frontend')));
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+
+
+
 
 // WhatsApp client setup
 const client = new Client({ 
@@ -36,6 +45,163 @@ client.initialize();
 
 // --- API Endpoints ---
 app.use('/images', express.static(__dirname + '/images'));
+
+const storageVoice = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = './uploads';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const unique = Date.now() + '-' + file.originalname;
+    console.log(unique, "🎙️ Voice:", unique);
+    cb(null, unique);
+  }
+});
+
+const uploadVoice = multer({
+  storage: storageVoice,
+  fileFilter: (req, file, cb) => {
+    console.log('🧪 Incoming file (Voice):', file.fieldname, file.mimetype);
+
+    const allowedTypes = {
+      voice_note: ['audio/webm', 'audio/ogg', 'audio/mpeg'],
+    };
+
+    const allowedMimes = allowedTypes[file.fieldname];
+
+    if (!allowedMimes) {
+      console.error('❌ Unexpected field in Voice:', file.fieldname);
+      return cb(new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+    }
+
+    if (!allowedMimes.includes(file.mimetype)) {
+      console.warn('⚠️ Invalid MIME type for voice note:', file.mimetype);
+      return cb(null, false);
+    }
+
+    cb(null, true);
+  }
+});
+
+
+const storageTextImage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+
+const uploadTextImage = multer({
+  storage: storageTextImage
+});
+
+
+app.post('/api/send-text-image', uploadTextImage.fields([{ name: 'image' }]), async (req, res) => {
+  const { numbers, message, category, userId } = req.body;
+  const image = req.files?.image?.[0]?.path || null;
+
+  let contactsNumbers = [];
+
+  try {
+    // 🟡 If category selected, fetch numbers from DB
+    if (category) {
+      const result = await pool.query(`
+        SELECT contacts.number FROM contacts
+        JOIN contact_categories ON contacts.id = contact_categories.contact_id
+        JOIN categories ON contact_categories.category_id = categories.id
+        WHERE categories.id = $1
+      `, [category]);
+      contactsNumbers = result.rows.map(r => r.number);
+    } else {
+      contactsNumbers = numbers ? JSON.parse(numbers) : [];
+    }
+
+    for (const number of contactsNumbers) {
+      const formatted = number.replace(/\D/g, '') + '@c.us';
+
+      if (image && fs.existsSync(image)) {
+        const media = MessageMedia.fromFilePath(image);
+        await client.sendMessage(formatted, media, { caption: message });
+      } else if (message) {
+        await client.sendMessage(formatted, message);
+      }
+    }
+
+    await pool.query(
+      'INSERT INTO messages (message, numbers, category_name, user_id, image) VALUES ($1, $2, $3, $4, $5)',
+      [message, contactsNumbers, category || null, userId || null, image]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Error in /api/send-text-image:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+
+app.post('/api/send-voice', (req, res, next) => {
+  uploadVoice.fields([{ name: 'voice_note', maxCount: 1 }])(req, res, function (err) {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req, res) => {
+  const { numbers, userId, category } = req.body;
+  const voicePath = req.files?.voice_note?.[0]?.path || null;
+
+  let contactsNumbers = [];
+
+  try {
+    // 🟡 If category selected, fetch numbers from DB
+    if (category) {
+      const result = await pool.query(`
+        SELECT contacts.number FROM contacts
+        JOIN contact_categories ON contacts.id = contact_categories.contact_id
+        JOIN categories ON contact_categories.category_id = categories.id
+        WHERE categories.id = $1
+      `, [category]);
+      contactsNumbers = result.rows.map(r => r.number);
+    } else {
+      contactsNumbers = numbers ? JSON.parse(numbers) : [];
+    }
+
+    let convertedVoicePath = null;
+    if (voicePath && voicePath.endsWith('.webm')) {
+      convertedVoicePath = voicePath.replace('.webm', '.ogg');
+      await new Promise((resolve, reject) => {
+        ffmpeg(voicePath)
+          .toFormat('ogg')
+          .audioCodec('libopus')
+          .on('end', resolve)
+          .on('error', reject)
+          .save(convertedVoicePath);
+      });
+    }
+
+    for (const number of contactsNumbers) {
+      const formatted = number.replace(/\D/g, '') + '@c.us';
+
+      if (convertedVoicePath && fs.existsSync(convertedVoicePath)) {
+        const media = MessageMedia.fromFilePath(convertedVoicePath);
+        await client.sendMessage(formatted, media);
+      }
+    }
+
+    await pool.query(
+      'INSERT INTO messages (message, numbers, category_name, user_id, voice_note) VALUES ($1, $2, $3, $4, $5)',
+      ['Voice note', contactsNumbers, category || null, userId || null, convertedVoicePath || voicePath]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('❌ Error in /api/send-voice:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 
 
@@ -500,8 +666,17 @@ app.delete('/api/contacts/:id', async (req, res) => {
 app.get('/api/history', async (_, res) => {
   try {
     const result = await pool.query(`
-      SELECT m.id, m.message, m.numbers, m.category_name, m.timestamp,
-             u.id AS user_id, u.name AS user_name, u.email AS user_email
+      SELECT 
+        m.id, 
+        m.message, 
+        m.numbers, 
+        m.category_name, 
+        m.timestamp,
+        m.image,                  -- ✅ Image path
+        m.voice_note,            -- ✅ Voice path
+        u.id AS user_id, 
+        u.name AS user_name, 
+        u.email AS user_email
       FROM messages m
       LEFT JOIN users u ON m.user_id = u.id
       ORDER BY m.timestamp DESC
@@ -514,6 +689,8 @@ app.get('/api/history', async (_, res) => {
       numbers: row.numbers,
       categoryName: row.category_name,
       timestamp: row.timestamp,
+      image: row.image || "",               // ✅ Pass image
+      voice_note: row.voice_note || "",     // ✅ Pass voice note
       user: row.user_id ? {
         id: row.user_id,
         name: row.user_name,
@@ -528,55 +705,8 @@ app.get('/api/history', async (_, res) => {
   }
 });
 
-// Send WhatsApp message and store history (with user)
-app.post('/api/send', async (req, res) => {
-  const { numbers, message, category, userId } = req.body;
-  let contactsNumbers = numbers || [];
-  let categoryName = null;
 
-  try {
-    if (!client || !client.info || !client.info.wid) {
-      return res.status(400).json({ error: 'Your WhatsApp is not connected' });
-    }
 
-    if (category) {
-      const result = await pool.query(`
-        SELECT contacts.number, contacts.name
-        FROM contacts
-        JOIN contact_categories ON contacts.id = contact_categories.contact_id
-        JOIN categories ON contact_categories.category_id = categories.id
-        WHERE categories.id = $1
-      `, [category]);
-
-      contactsNumbers = result.rows.map(r => r.number);
-
-      const cat = await pool.query('SELECT name FROM categories WHERE id = $1', [category]);
-      categoryName = cat.rows[0]?.name || null;
-    }
-
-    for (const number of contactsNumbers) {
-      const cleaned = number.replace(/\D/g, '');
-      if (!cleaned) continue;
-      const formatted = cleaned + '@c.us';
-
-      try {
-        await client.sendMessage(formatted, message);
-      } catch (error) {
-        console.error('Failed to send message to', formatted, ':', error.message);
-      }
-    }
-
-    await pool.query(
-      'INSERT INTO messages (message, numbers, category_name, user_id) VALUES ($1, $2, $3, $4)',
-      [message, contactsNumbers, categoryName, userId || null]
-    );
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Error in /api/send:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
 
 
 // Start server
