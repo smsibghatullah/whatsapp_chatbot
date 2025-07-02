@@ -483,7 +483,7 @@
         <label><strong>Select Message Type:</strong></label>
         <div class="radio-group">
           <label><input type="radio" name="message_type" value="text" checked /> Text / Image</label>
-          <label><input type="radio" name="message_type" value="voice" /> Voice Note</label>
+          <!-- <label><input type="radio" name="message_type" value="voice" /> Voice Note</label> -->
         </div>
         
         <!-- Conditional Inputs -->
@@ -499,7 +499,7 @@
           
         </div>
         
-        <div id="voiceWrapper" style="display: none;">
+        <!-- <div id="voiceWrapper" style="display: none;">
           <label>Voice Note:</label>
           <br/>
           <button type="button" id="recordBtn" class="record-btn">
@@ -510,7 +510,7 @@
           </button>
           
           <audio id="audioPreview" controls style="margin-top: 10px; display: none;"></audio>
-        </div>
+        </div> -->
         
         <button type="submit">Send</button>
       </form>
@@ -764,8 +764,6 @@ typeRadios.forEach(radio => {
 });
 
 
-
-
 document.getElementById('sendForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
@@ -790,17 +788,17 @@ document.getElementById('sendForm').addEventListener('submit', async (e) => {
       formData.append('image', imageFile);
     }
 
-    apiUrl = '/api/send-text-image';  // ✅ Text + Image API
+    apiUrl = '/api/send-text-image';  
 
   } else if (selectedType === 'voice') {
     if (!voiceBlob) return showToast("Please record a voice note first.");
     const voiceFile = new File([voiceBlob], 'voice.webm', { type: 'audio/webm' });
     formData.append('voice_note', voiceFile);
 
-    apiUrl = '/api/send-voice';  // ✅ Voice Note API
+    apiUrl = '/api/send-voice';  
   }
 
-  // 📦 Add either category or numbers
+  
   if (useCategory.checked) {
     formData.set('category', categorySelect.value);
   } else {
@@ -838,9 +836,6 @@ document.getElementById('sendForm').addEventListener('submit', async (e) => {
     showToast('❌ Network error!');
   }
 });
-
-
-
 
   function showToast(message, color = '#f44336') {
     const toast = document.getElementById('toast');
