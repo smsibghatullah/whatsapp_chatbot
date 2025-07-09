@@ -422,7 +422,7 @@
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-header">WhatsApp Messenger</div>
-  <div class="menu-item" data-role="admin,user"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr /></div>
+  <div class="menu-item active"  data-role="admin,user"><a href="index.html"><i class="fas fa-paper-plane"></i> Send Message</a><hr /></div>
   <div class="menu-item" data-role="admin"><a href="add_category.html"><i class="fas fa-layer-group"></i> Add Category</a><hr /></div>
   <div class="menu-item" data-role="admin"><a href="add_contact.html"><i class="fas fa-user-plus"></i> Add Contact</a><hr /></div>
   <div class="menu-item" data-role="admin"><a href="add_user.html"><i class="fas fa-user-cog"></i> Add User</a><hr /></div>
@@ -483,7 +483,7 @@
         <label><strong>Select Message Type:</strong></label>
         <div class="radio-group">
           <label><input type="radio" name="message_type" value="text" checked /> Text / Image</label>
-          <!-- <label><input type="radio" name="message_type" value="voice" /> Voice Note</label> -->
+          <label><input type="radio" name="message_type" value="voice" /> Voice Note</label>
         </div>
         
         <!-- Conditional Inputs -->
@@ -499,7 +499,7 @@
           
         </div>
         
-        <!-- <div id="voiceWrapper" style="display: none;">
+        <div id="voiceWrapper" style="display: none;">
           <label>Voice Note:</label>
           <br/>
           <button type="button" id="recordBtn" class="record-btn">
@@ -510,7 +510,7 @@
           </button>
           
           <audio id="audioPreview" controls style="margin-top: 10px; display: none;"></audio>
-        </div> -->
+        </div>
         
         <button type="submit">Send</button>
       </form>
@@ -542,55 +542,58 @@ const stopBtn = document.getElementById('stopBtn');
 const audioPreview = document.getElementById('audioPreview');
 
 (async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return (window.location.href = 'login.html');
+      const token = localStorage.getItem('token');
+      const licenseKey = localStorage.getItem('license_key');
 
-            try {
-              const verify = await fetch('/api/verify-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token }),
-              });
+      if (!token || !licenseKey) return (window.location.href = 'login.html');
 
-              const verifyResult = await verify.json();
+      try {
+        const verify = await fetch('/api/verify-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token, license_key: licenseKey }),
+        });
 
-              if (!verify.ok || !verifyResult.valid) {
-                localStorage.clear();
-                return (window.location.href = 'login.html');
-              }
+        const verifyResult = await verify.json();
 
-              const payload = JSON.parse(atob(token.split('.')[1]));
+        if (!verify.ok || !verifyResult.valid) {
+          localStorage.clear();
+          return (window.location.href = 'login.html');
+        }
 
-              // ✅ Make global for access anywhere
-              window.userRole = payload.role;
-              window.userId = payload.id;
+        const payload = JSON.parse(atob(token.split('.')[1]));
 
-              const pageName = location.pathname.split('/').pop() || 'index.html';
+        window.userRole = payload.role;
+        window.userId = payload.id;
+        window.token = token;
+        window.licenseKey = licenseKey;
 
-              // Restrict access to certain pages
-              if (
-                window.userRole !== 'admin' &&
-                !['index.html', 'profile.html', 'history.html'].includes(pageName)
-              ) {
-                return (window.location.href = 'index.html');
-              }
+        const pageName = location.pathname.split('/').pop() || 'index.html';
 
-              // Hide sidebar menu items for "user"
-              if (window.userRole === 'user') {
-                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-                  const href = item.querySelector('a')?.getAttribute('href');
-                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
-                    item.style.display = 'none';
-                  }
-                });
-              }
+        if (
+          window.userRole !== 'admin' &&
+          !['index.html', 'profile.html', 'history.html'].includes(pageName)
+        ) {
+          return (window.location.href = 'index.html');
+        }
 
-            } catch (err) {
-              console.error('Verification failed:', err);
-              localStorage.clear();
-              window.location.href = 'login.html';
+        if (window.userRole === 'user') {
+          document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+            const href = item.querySelector('a')?.getAttribute('href');
+            if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+              item.style.display = 'none';
             }
-          })();
+          });
+        }
+
+      } catch (err) {
+        console.error('Verification failed:', err);
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    })();
 
 
 recordBtn.addEventListener('click', async () => {
@@ -653,22 +656,34 @@ let voiceBlob = null;
   const socket = io();
   const qrcodeDiv = document.getElementById('qrcode');
 
-  // qrcodeDiv.innerHTML = '<div id="loader"></div>';
+  if (!qrcodeDiv) {
+    console.error("QR Code div not found");
+  }
 
+  // QR code show
   socket.on('qr', qr => {
     qrcodeDiv.innerHTML = `<img src="${qr}" width="280">`;
   });
 
-  socket.on('ready', () => {
+  // WhatsApp connected
+  socket.on('ready', (data) => {
+    const number = data?.number || 'Unknown';
+
     qrcodeDiv.innerHTML = '<div id="loader"></div>';
-    
+
     setTimeout(() => {
       qrcodeDiv.innerHTML = `
         <div style="color: green; font-weight: bold; font-size: 18px;">
-          ✅ WhatsApp Connected
+          ✅ WhatsApp Connected<br/>
+          <span style="font-size: 16px; color: #555;">Number: +${number}</span>
         </div>
       `;
-    }, 2000); 
+    }, 2000);
+  });
+
+  // ❌ WhatsApp mismatch or other error
+  socket.on('error', (message) => {
+    showToast(message || '❌ WhatsApp Number Mismatched', '#f44336');
   });
 
   const useCategory = document.getElementById('useCategory');
@@ -717,38 +732,63 @@ let voiceBlob = null;
   });
 
   async function loadCategories() {
-    try {
-      const res = await fetch('/api/categories');
-      if (!res.ok) throw new Error("Failed to fetch categories");
-      const data = await res.json();
-      categorySelect.innerHTML = '<option value="">Select Category</option>';
-      data.forEach(cat => {
-        const opt = document.createElement('option');
-        opt.value = cat.id;
-        opt.textContent = cat.name;
-        categorySelect.appendChild(opt);
-      });
-    } catch (err) {
-      showToast("Failed to load categories");
-    }
-  }
+  const token = localStorage.getItem('token');
+  const licenseKey = localStorage.getItem('license_key');
 
-  async function loadContacts() {
-    try {
-      const res = await fetch('/api/contacts');
-      if (!res.ok) throw new Error("Failed to fetch contacts");
-      const data = await res.json();
-      contactSelect.innerHTML = '<option value="">-- Select Contact --</option>';
-      data.forEach(contact => {
-        const opt = document.createElement('option');
-        opt.value = contact.number;
-        opt.textContent = `${contact.name} - ${contact.number}`;
-        contactSelect.appendChild(opt);
-      });
-    } catch (err) {
-      showToast("Failed to load contacts");
-    }
+  try {
+    const res = await fetch('/api/categories', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': `Bearer ${token}`,
+        'license_key': licenseKey
+      }
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch categories");
+
+    const data = await res.json();
+    categorySelect.innerHTML = '<option value="">Select Category</option>';
+    data.forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      categorySelect.appendChild(opt);
+    });
+  } catch (err) {
+    showToast("Failed to load categories");
   }
+}
+
+async function loadContacts() {
+  const token = localStorage.getItem('token');
+  const licenseKey = localStorage.getItem('license_key');
+
+  try {
+    const res = await fetch('/api/contacts', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': `Bearer ${token}`,
+        'license_key': licenseKey
+      }
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch contacts");
+
+    const data = await res.json();
+    contactSelect.innerHTML = '<option value="">-- Select Contact --</option>';
+    data.forEach(contact => {
+      const opt = document.createElement('option');
+      opt.value = contact.number;
+      opt.textContent = `${contact.name} - ${contact.number}`;
+      contactSelect.appendChild(opt);
+    });
+  } catch (err) {
+    showToast("Failed to load contacts");
+  }
+}
+
 
   const typeRadios = document.querySelectorAll('input[name="message_type"]');
   const textWrapper = document.getElementById('textMessageWrapper');
@@ -849,7 +889,15 @@ document.getElementById('sendForm').addEventListener('submit', async (e) => {
   }
 
   function whatsapplogout() {
-      localStorage.removeItem('token');
+      localStorage.clear();
+
+      document.cookie.split(";").forEach(function(c) {
+        document.cookie = c
+          .replace(/^ +/, "")
+          .replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+      });
+
+      sessionStorage.clear();
 
       fetch('/api/logout-whatsapp', {
         method: 'POST',

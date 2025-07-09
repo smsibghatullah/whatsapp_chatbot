@@ -470,55 +470,58 @@ function isValidPhoneNumber(rawNumber) {
   return localNumber.length >= rule.min && localNumber.length <= rule.max;
 }
 (async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return (window.location.href = 'login.html');
+      const token = localStorage.getItem('token');
+      const licenseKey = localStorage.getItem('license_key');
 
-            try {
-              const verify = await fetch('/api/verify-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token }),
-              });
+      if (!token || !licenseKey) return (window.location.href = 'login.html');
 
-              const verifyResult = await verify.json();
+      try {
+        const verify = await fetch('/api/verify-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token, license_key: licenseKey }),
+        });
 
-              if (!verify.ok || !verifyResult.valid) {
-                localStorage.clear();
-                return (window.location.href = 'login.html');
-              }
+        const verifyResult = await verify.json();
 
-              const payload = JSON.parse(atob(token.split('.')[1]));
+        if (!verify.ok || !verifyResult.valid) {
+          localStorage.clear();
+          return (window.location.href = 'login.html');
+        }
 
-              // ✅ Make global for access anywhere
-              window.userRole = payload.role;
-              window.userId = payload.id;
+        const payload = JSON.parse(atob(token.split('.')[1]));
 
-              const pageName = location.pathname.split('/').pop() || 'index.html';
+        window.userRole = payload.role;
+        window.userId = payload.id;
+        window.token = token;
+        window.licenseKey = licenseKey;
 
-              // Restrict access to certain pages
-              if (
-                window.userRole !== 'admin' &&
-                !['index.html', 'profile.html', 'history.html'].includes(pageName)
-              ) {
-                return (window.location.href = 'index.html');
-              }
+        const pageName = location.pathname.split('/').pop() || 'index.html';
 
-              // Hide sidebar menu items for "user"
-              if (window.userRole === 'user') {
-                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-                  const href = item.querySelector('a')?.getAttribute('href');
-                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
-                    item.style.display = 'none';
-                  }
-                });
-              }
+        if (
+          window.userRole !== 'admin' &&
+          !['index.html', 'profile.html', 'history.html'].includes(pageName)
+        ) {
+          return (window.location.href = 'index.html');
+        }
 
-            } catch (err) {
-              console.error('Verification failed:', err);
-              localStorage.clear();
-              window.location.href = 'login.html';
+        if (window.userRole === 'user') {
+          document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+            const href = item.querySelector('a')?.getAttribute('href');
+            if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+              item.style.display = 'none';
             }
-          })();
+          });
+        }
+
+      } catch (err) {
+        console.error('Verification failed:', err);
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    })();
 
 
     function logout() {
@@ -539,23 +542,68 @@ function showToast(msg, color = '#25d366') {
 
 
 async function loadCategories() {
-  const res = await fetch('/api/categories');
-  categories = await res.json();
-  const catSelect = document.getElementById('contactCategory');
-  const editSelect = document.getElementById('editCategories');
-  catSelect.innerHTML = editSelect.innerHTML = '';
-  categories.forEach(cat => {
-    catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-    editSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
-  });
+  const token = localStorage.getItem('token');
+  const licenseKey = localStorage.getItem('license_key');
+
+  try {
+    const res = await fetch('/api/categories', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': `Bearer ${token}`,
+        'license_key': licenseKey
+      }
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) return showToast(data.error || "Failed to load categories");
+
+    categories = data;
+
+    const catSelect = document.getElementById('contactCategory');
+    const editSelect = document.getElementById('editCategories');
+    catSelect.innerHTML = editSelect.innerHTML = '';
+    categories.forEach(cat => {
+      catSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+      editSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
+    });
+
+  } catch (err) {
+    console.error(err);
+    showToast("Error loading categories");
+  }
 }
 
+
 async function loadContacts() {
-  const res = await fetch('/api/contacts');
-  contacts = await res.json();
-  currentPage = 1; // reset to first page when data reloads
-  displayContacts();
+  const token = localStorage.getItem('token');
+  const licenseKey = localStorage.getItem('license_key');
+
+  try {
+    const res = await fetch('/api/contacts', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': `Bearer ${token}`,
+        'license_key': licenseKey
+      }
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) return showToast(data.error || "Failed to load contacts");
+
+    contacts = data;
+    currentPage = 1; // reset to first page when data reloads
+    displayContacts();
+
+  } catch (err) {
+    console.error(err);
+    showToast("Error loading contacts");
+  }
 }
+
 
 function displayContacts() {
   const tbody = document.getElementById('contactTable');
@@ -767,7 +815,7 @@ if (!isValidPhoneNumber(number)) {
 
   const res = await fetch('/api/contacts', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
     body: JSON.stringify({ name, number, categories: selected })
   });
 
@@ -841,7 +889,7 @@ if (!isValidPhoneNumber(number)) {
 
   const res = await fetch(`/api/contacts/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
     body: JSON.stringify({ name, number, categories: selected })
   });
 
@@ -862,7 +910,7 @@ function openDelete(id) {
 }
 
 async function confirmDelete() {
-  await fetch(`/api/contacts/${deleteId}`, { method: 'DELETE' });
+  await fetch(`/api/contacts/${deleteId}`, { method: 'DELETE',headers: { 'authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  }, });
   showToast("Contact deleted!");
   closeModal('deleteModal');
   loadContacts();

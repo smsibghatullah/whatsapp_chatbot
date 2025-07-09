@@ -523,57 +523,62 @@
     let sortDirection = 'asc';
     let categories = [], currentEditId = null, currentDeleteId = null;
     let currentPage = 1;
+    
     const rowsPerPage = 10;
     (async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return (window.location.href = 'login.html');
+      const token = localStorage.getItem('token');
+      const licenseKey = localStorage.getItem('license_key');
 
-            try {
-              const verify = await fetch('/api/verify-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token }),
-              });
+      if (!token || !licenseKey) return (window.location.href = 'login.html');
 
-              const verifyResult = await verify.json();
+      try {
+        const verify = await fetch('/api/verify-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token, license_key: licenseKey }),
+        });
 
-              if (!verify.ok || !verifyResult.valid) {
-                localStorage.clear();
-                return (window.location.href = 'login.html');
-              }
+        const verifyResult = await verify.json();
 
-              const payload = JSON.parse(atob(token.split('.')[1]));
+        if (!verify.ok || !verifyResult.valid) {
+          localStorage.clear();
+          return (window.location.href = 'login.html');
+        }
 
-              // ✅ Make global for access anywhere
-              window.userRole = payload.role;
-              window.userId = payload.id;
+        const payload = JSON.parse(atob(token.split('.')[1]));
 
-              const pageName = location.pathname.split('/').pop() || 'index.html';
+        window.userRole = payload.role;
+        window.userId = payload.id;
+        window.token = token;
+        window.licenseKey = licenseKey;
 
-              // Restrict access to certain pages
-              if (
-                window.userRole !== 'admin' &&
-                !['index.html', 'profile.html', 'history.html'].includes(pageName)
-              ) {
-                return (window.location.href = 'index.html');
-              }
+        const pageName = location.pathname.split('/').pop() || 'index.html';
 
-              // Hide sidebar menu items for "user"
-              if (window.userRole === 'user') {
-                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-                  const href = item.querySelector('a')?.getAttribute('href');
-                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
-                    item.style.display = 'none';
-                  }
-                });
-              }
+        if (
+          window.userRole !== 'admin' &&
+          !['index.html', 'profile.html', 'history.html'].includes(pageName)
+        ) {
+          return (window.location.href = 'index.html');
+        }
 
-            } catch (err) {
-              console.error('Verification failed:', err);
-              localStorage.clear();
-              window.location.href = 'login.html';
+        if (window.userRole === 'user') {
+          document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+            const href = item.querySelector('a')?.getAttribute('href');
+            if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+              item.style.display = 'none';
             }
-          })();
+          });
+        }
+
+      } catch (err) {
+        console.error('Verification failed:', err);
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    })();
+
 
     function logout() {
       showToast("Logging out...", "#25d366");
@@ -592,10 +597,29 @@
     }
 
     async function fetchCategories() {
-      const res = await fetch('/api/categories');
-      categories = await res.json();
-      displayCategories();
-    }
+      const token = localStorage.getItem('token');
+      const licenseKey = localStorage.getItem('license_key');
+        try {
+          const res = await fetch('/api/categories', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'authorization': `Bearer ${token}`,
+              'license_key': licenseKey
+            }
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) return showToast(data.error || "Failed to fetch categories");
+
+          categories = data;
+          displayCategories();
+        } catch (err) {
+          console.error(err);
+          showToast("Error fetching categories");
+        }
+      }
 
     function displayCategories() {
       const tbody = document.getElementById('categoriesTable');
@@ -697,27 +721,32 @@
     }
 
     document.getElementById('categoryForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const name = document.getElementById('categoryName').value.trim();
-      if (!name) return showToast("Please enter a category name");
+        e.preventDefault();
+        const name = document.getElementById('categoryName').value.trim();
+       
 
-      try {
-        const res = await fetch('/api/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
+        if (!name) return showToast("Please enter a category name");
 
-        const data = await res.json();
-        if (!res.ok) return showToast(data.error || 'Failed to add category');
-        document.getElementById('categoryForm').reset();
-        fetchCategories();
-        showToast("Category added successfully!", "#4caf50");
-      } catch (err) {
-        console.error(err);
-        showToast("Failed to add category");
-      }
-    });
+        try {
+          const res = await fetch('/api/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
+            body: JSON.stringify({name})
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) return showToast(data.error || 'Failed to add category');
+
+          document.getElementById('categoryForm').reset();
+          fetchCategories();
+          showToast("Category added successfully!", "#4caf50");
+        } catch (err) {
+          console.error(err);
+          showToast("Failed to add category");
+        }
+      });
+
 
     document.getElementById('searchInput').addEventListener('input', () => {
       currentPage = 1;
@@ -736,7 +765,7 @@
 
       fetch(`/api/categories/${currentEditId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
         body: JSON.stringify({ name })
       })
         .then(async res => {
@@ -758,7 +787,7 @@
     }
 
     function confirmDelete() {
-      fetch(`/api/categories/${currentDeleteId}`, { method: 'DELETE' })
+      fetch(`/api/categories/${currentDeleteId}`, { method: 'DELETE',headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  }, })
         .then(async res => {
           const data = await res.json();
           closeModal('deleteModal');

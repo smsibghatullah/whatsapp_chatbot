@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Enter License Key</title>
+  <link rel="icon" href="https://img.icons8.com/color/48/000000/whatsapp.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --dark-green: #075e54;
+      --white: #f8f8f8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', sans-serif;
+      background: var(--white);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .box {
+      background-color: white;
+      padding: 50px 40px;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 520px;
+      text-align: center;
+      animation: fadeIn 0.6s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .box h2 {
+      margin-bottom: 25px;
+      color: var(--dark-green);
+      font-weight: 700;
+      font-size: 26px;
+    }
+
+    .box input {
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      transition: border-color 0.3s;
+      text-align: center;
+    }
+
+    .box input:focus {
+      border-color: #25d366;
+      outline: none;
+    }
+
+    .box button {
+      width: 100%;
+      padding: 14px;
+      background-color: #25d366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    .box button:hover {
+      background-color: #1ebe5d;
+    }
+
+    .error {
+      color: #e53935;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+
+    footer {
+      margin-top: auto;
+      width: 100%;
+      background-color: var(--dark-green);
+      color: white;
+      text-align: center;
+      font-size: 13px;
+      padding: 12px 0;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 10;
+      border-top: 1px solid #ccc;
+    }
+
+    footer a {
+      color: #fff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    footer span {
+      margin: 0 10px;
+    }
+
+    @media (max-width: 480px) {
+      .box {
+        padding: 30px 20px;
+      }
+
+      .box h2 {
+        font-size: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🔐 Enter License Key</h2>
+    <form id="licenseForm">
+      <div class="error" id="error"></div>
+      <input type="text" id="licenseKey" placeholder="Enter License Key" />
+      <button type="submit">Validate</button>
+    </form>
+  </div>
+
+  <footer>
+    <span>&copy; DSM - Dynamic Solution Maker</span>
+    <span>|</span>
+    <a href="https://www.dsmpk.com" target="_blank">www.dsmpk.com</a>
+    <span>|</span>
+    <span>+92 345 3074064</span>
+  </footer>  
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async function () {
+      // ✅ Check if license key is already in localStorage
+      const savedKey = localStorage.getItem('license_key');
+      if (savedKey) {
+        // Optional: You can also verify with server here if needed
+        window.location.href = 'index.html';
+        return;
+      }
+  
+      // 🟡 Else, check with server (optional server-side validation)
+      const res = await fetch('/api/check-license', {
+        method: 'GET',
+        credentials: 'include'
+      });
+  
+      const data = await res.json();
+  
+      if (data.valid) {
+        // Save in localStorage just in case
+        localStorage.setItem('license_key', data.licenseKey || 'stored');
+        window.location.href = 'index.html';
+        return;
+      }
+  
+      // 📝 License form submit
+      document.getElementById('licenseForm').addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const key = document.getElementById('licenseKey').value.trim();
+        const error = document.getElementById('error');
+        error.textContent = '';
+  
+        if (!key) {
+          error.textContent = '⚠️ Please enter a license key.';
+          return;
+        }
+  
+        try {
+          const res = await fetch('/api/validate-license', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ licenseKey: key }),
+            credentials: 'include'
+          });
+  
+          const data = await res.json();
+  
+          if (data.valid) {
+            localStorage.setItem('license_key', key);  
+            window.location.href = 'index.html';
+          } else {
+            error.textContent = '❌ Invalid license key.';
+          }
+        } catch (err) {
+          error.textContent = '⚠️ Server error. Please try again later.';
+        }
+      });
+    });
+  </script>
+  
+</body>
+</html>

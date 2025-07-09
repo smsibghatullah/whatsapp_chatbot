@@ -462,57 +462,59 @@
   <div id="toast"></div>
 
   <script>
-    (async () => {
-            const token = localStorage.getItem('token');
-            if (!token) return (window.location.href = 'login.html');
+   (async () => {
+      const token = localStorage.getItem('token');
+      const licenseKey = localStorage.getItem('license_key');
 
-            try {
-              const verify = await fetch('/api/verify-token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token }),
-              });
+      if (!token || !licenseKey) return (window.location.href = 'login.html');
 
-              const verifyResult = await verify.json();
+      try {
+        const verify = await fetch('/api/verify-token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token, license_key: licenseKey }),
+        });
 
-              if (!verify.ok || !verifyResult.valid) {
-                localStorage.clear();
-                return (window.location.href = 'login.html');
-              }
+        const verifyResult = await verify.json();
 
-              const payload = JSON.parse(atob(token.split('.')[1]));
+        if (!verify.ok || !verifyResult.valid) {
+          localStorage.clear();
+          return (window.location.href = 'login.html');
+        }
 
-              // ✅ Make global for access anywhere
-              window.userRole = payload.role;
-              window.userId = payload.id;
+        const payload = JSON.parse(atob(token.split('.')[1]));
 
-              const pageName = location.pathname.split('/').pop() || 'index.html';
+        window.userRole = payload.role;
+        window.userId = payload.id;
+        window.token = token;
+        window.licenseKey = licenseKey;
 
-              // Restrict access to certain pages
-              if (
-                window.userRole !== 'admin' &&
-                !['index.html', 'profile.html', 'history.html'].includes(pageName)
-              ) {
-                return (window.location.href = 'index.html');
-              }
+        const pageName = location.pathname.split('/').pop() || 'index.html';
 
-              // Hide sidebar menu items for "user"
-              if (window.userRole === 'user') {
-                document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
-                  const href = item.querySelector('a')?.getAttribute('href');
-                  if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
-                    item.style.display = 'none';
-                  }
-                });
-              }
+        if (
+          window.userRole !== 'admin' &&
+          !['index.html', 'profile.html', 'history.html'].includes(pageName)
+        ) {
+          return (window.location.href = 'index.html');
+        }
 
-            } catch (err) {
-              console.error('Verification failed:', err);
-              localStorage.clear();
-              window.location.href = 'login.html';
+        if (window.userRole === 'user') {
+          document.querySelectorAll('.sidebar .menu-item').forEach((item) => {
+            const href = item.querySelector('a')?.getAttribute('href');
+            if (!['index.html', 'profile.html', 'history.html'].includes(href)) {
+              item.style.display = 'none';
             }
-          })();
+          });
+        }
 
+      } catch (err) {
+        console.error('Verification failed:', err);
+        localStorage.clear();
+        window.location.href = 'login.html';
+      }
+    })();
 
     function logout() {
     showToast("Logging out...", "#25d366");
@@ -537,18 +539,32 @@
     let usersPerPage = 10;
 
     async function fetchUsers() {
-      try {
-        const res = await fetch('/api/users');
-        if (!res.ok) throw new Error('Failed to fetch users');
-        allUsers = await res.json();
-        filteredUsers = allUsers;
-        currentPage = 1;
-        renderPage();
-      } catch (err) {
-        console.error(err);
-        showToast('Failed to load users');
+        const token = localStorage.getItem('token');
+        const licenseKey = localStorage.getItem('license_key');
+
+        try {
+          const res = await fetch('/api/users', {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'authorization': `Bearer ${token}`,
+              'license_key': licenseKey
+            }
+          });
+
+          if (!res.ok) throw new Error('Failed to fetch users');
+
+          allUsers = await res.json();
+          filteredUsers = allUsers;
+          currentPage = 1;
+          renderPage();
+
+        } catch (err) {
+          console.error(err);
+          showToast('Failed to load users');
+        }
       }
-    }
+
 
     // Render users for current page
     function renderPage() {
@@ -625,7 +641,7 @@
       try {
         const res = await fetch('/api/users', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
           body: JSON.stringify(user)
         });
         const data = await res.json();
@@ -673,7 +689,7 @@
         try {
           const res = await fetch(`/api/users/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json','authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
             body: JSON.stringify(user)
           });
 
@@ -703,7 +719,8 @@
       if (!deleteUserId) return;
       try {
         const res = await fetch(`/api/users/${deleteUserId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: {'authorization' : `Bearer ${window.token}`, 'license_key': window.licenseKey  },
         });
         const data = await res.json();
         if (!res.ok) return showToast(data.error || 'Error deleting user');

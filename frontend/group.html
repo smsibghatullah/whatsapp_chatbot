@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>WhatsApp Groups</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="container">
+    <h2>📂 WhatsApp Groups</h2>
+    <button onclick="syncGroups()">🔄 Sync Groups</button>
+    <ul id="groupList"></ul>
+  </div>
+
+  <script>
+    async function loadGroups() {
+      const res = await fetch('/api/groups');
+      const data = await res.json();
+      const list = document.getElementById('groupList');
+      list.innerHTML = '';
+      data.forEach(group => {
+        const li = document.createElement('li');
+        li.textContent = `${group.name} (${group.group_id})`;
+        list.appendChild(li);
+      });
+    }
+
+    async function syncGroups() {
+      const res = await fetch('/api/groups/sync', { method: 'POST' });
+      const data = await res.json();
+      alert(data.message || 'Groups synced!');
+      loadGroups();
+    }
+
+    // Load groups on page load
+    window.onload = loadGroups;
+  </script>
+</body>
+</html>
