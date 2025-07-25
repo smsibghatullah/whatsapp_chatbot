@@ -8,11 +8,11 @@
   const httpServer = createServer(app);
   const pool = require('./config/db');
   const cors = require('cors');
-  const IP = "192.168.10.29";
+  // const IP = "192.168.10.29";
 
   const io = new Server(httpServer, {
     cors: {
-      origin: 'http://192.168.10.29:3000',
+      origin: '*',
         methods: 'GET,POST,PUT,DELETE',
         allowedHeaders: ['Content-Type', 'Authorization', 'license_key'] ,
         credentials: true
@@ -69,7 +69,7 @@ if (!client.info || !client.info.wid || !client.info.wid.user) {
 
   //cors
   app.use(cors({
-    origin: 'http://192.168.10.29:3000', // ✅ NOT '*'
+    origin: '*', // ✅ NOT '*'
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'license_key'],
     credentials: true
@@ -261,7 +261,7 @@ if (!client.info || !client.info.wid || !client.info.wid.user) {
   // ==========================
   // 🚀 Start Server
   // ==========================
-  const PORT = process.env.PORT || 3002;
-  httpServer.listen(PORT, IP, () => {
+  const PORT = process.env.PORT || 3001;
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://${IP}:${PORT}`);
   });
